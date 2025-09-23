@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Placeholder for clock.png -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="80dp"
+    android:height="80dp"
+    android:viewportWidth="80"
+    android:viewportHeight="80">
+    <path
+        android:fillColor="#85C7EE"
+        android:pathData="M40,10A30,30 0 0,1 70,40A30,30 0 0,1 40,70A30,30 0 0,1 10,40A30,30 0 0,1 40,10Z"/>
+    <path
+        android:fillColor="#121212"
+        android:pathData="M40,20A20,20 0 0,1 60,40A20,20 0 0,1 40,60A20,20 0 0,1 20,40A20,20 0 0,1 40,20M40,25A15,15 0 0,0 25,40A15,15 0 0,0 40,55A15,15 0 0,0 55,40A15,15 0 0,0 40,25M42,30V42L50,50L47,53L37,43V30H42Z"/>
+</vector>

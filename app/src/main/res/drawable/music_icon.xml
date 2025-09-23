@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Placeholder for music.png -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="80dp"
+    android:height="80dp"
+    android:viewportWidth="80"
+    android:viewportHeight="80">
+    <path
+        android:fillColor="#D9C7E7"
+        android:pathData="M40,10A30,30 0 0,1 70,40A30,30 0 0,1 40,70A30,30 0 0,1 10,40A30,30 0 0,1 40,10Z"/>
+    <path
+        android:fillColor="#121212"
+        android:pathData="M30,25L50,20V50C50,53.31 47.31,56 44,56C40.69,56 38,53.31 38,50C38,46.69 40.69,44 44,44C45.1,44 46.12,44.37 46.95,45H47V28L32,32V55C32,58.31 29.31,61 26,61C22.69,61 20,58.31 20,55C20,51.69 22.69,49 26,49C27.1,49 28.12,49.37 28.95,50H29V25H30Z"/>
+</vector>

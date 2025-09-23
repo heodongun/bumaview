@@ -2,6 +2,7 @@ package com.example.engpu.ui.screens.auth
 
 import androidx.compose.animation.*
 import androidx.compose.animation.core.*
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -12,10 +13,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.engpu.R
 import com.example.engpu.ui.components.StudyWithButton
 import com.example.engpu.ui.components.StudyWithOutlinedButton
 import com.example.engpu.ui.theme.*
@@ -45,7 +49,7 @@ fun OnboardingScreen(
         ) {
             Spacer(modifier = Modifier.height(0.dp))
             
-            // Illustration Container with animation
+            // 피그마 Group 17 일러스트레이션 - 실제 이미지 사용
             AnimatedVisibility(
                 visible = isVisible,
                 enter = slideInVertically(
@@ -57,10 +61,10 @@ fun OnboardingScreen(
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(452.dp)
-                        .offset(x = 49.dp),
+                        .offset(x = 73.dp), // 피그마 정확한 위치 x: 73
                     contentAlignment = Alignment.TopStart
                 ) {
-                    // Background blob shape with pulse animation
+                    // Background pulse animation
                     val infiniteTransition = rememberInfiniteTransition(label = "pulse")
                     val scale by infiniteTransition.animateFloat(
                         initialValue = 1f,
@@ -72,38 +76,27 @@ fun OnboardingScreen(
                         label = "scale"
                     )
                     
-                    Box(
-                        modifier = Modifier
-                            .size(432.dp, 452.dp)
-                            .scale(scale)
-                            .clip(RoundedCornerShape(226.dp))
-                            .background(Color.White.copy(alpha = 0.48f))
-                    )
-                    
-                    // Character illustration container with bounce animation
-                    val bounceScale by infiniteTransition.animateFloat(
-                        initialValue = 0.98f,
-                        targetValue = 1.02f,
-                        animationSpec = infiniteRepeatable(
-                            animation = tween(1500, easing = EaseInOut),
-                            repeatMode = RepeatMode.Reverse
-                        ),
-                        label = "bounce"
-                    )
-                    
-                    Box(
-                        modifier = Modifier
-                            .offset(x = 4.dp, y = 66.dp)
-                            .size(318.dp, 216.dp)
-                            .scale(bounceScale)
-                            .clip(RoundedCornerShape(10.dp))
-                            .background(Color.White),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            text = "🎓👥",
-                            fontSize = 80.sp,
-                            textAlign = TextAlign.Center
+                    // 실제 Group17.png 이미지 사용 + Group28 보조 요소 추가
+                    Box {
+                        Image(
+                            painter = painterResource(id = R.drawable.group17),
+                            contentDescription = "StudyWith 일러스트레이션",
+                            modifier = Modifier
+                                .size(432.63.dp, 452.dp) // 피그마 정확한 크기
+                                .scale(scale),
+                            contentScale = ContentScale.Fit
+                        )
+                        
+                        // Group28 보조 그래픽 요소 추가
+                        Image(
+                            painter = painterResource(id = R.drawable.group28),
+                            contentDescription = "보조 그래픽",
+                            modifier = Modifier
+                                .size(48.dp) // Group28 적절한 크기
+                                .align(Alignment.BottomEnd)
+                                .offset(x = (-20).dp, y = (-20).dp)
+                                .scale(scale * 0.8f), // 약간 다른 애니메이션으로 층감 연출
+                            contentScale = ContentScale.Fit
                         )
                     }
                 }

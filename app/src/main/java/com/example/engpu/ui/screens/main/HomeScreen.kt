@@ -1,6 +1,7 @@
 package com.example.engpu.ui.screens.main
 
 import androidx.compose.animation.core.*
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -14,9 +15,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.engpu.R
 import com.example.engpu.navigation.Screen
 import com.example.engpu.ui.components.BottomNavigationBar
 import com.example.engpu.ui.theme.*
@@ -69,13 +73,13 @@ fun HomeScreen(
                 Spacer(modifier = Modifier.height(29.dp)) // y: 182 - 112 - 42 = 28dp
                 
                 // Action Cards - 피그마 순서와 색상에 맞춰 배치
-                // 1. 면접질문 저장소 (주황색)
+                // 1. 면접질문 저장소 (주황색) - 아이콘 변경
                 ActionCard(
                     title = "면접질문 저장소",
                     description = "면접질문을 돌아보는것도\n괜찮은 선택이에요!",
                     backgroundColor = StudyWithLightOrange, // #FF9A62
                     onClick = { onNavigate(Screen.Repository.route) },
-                    iconEmoji = "📁"
+                    iconEmoji = "📝" // 메모 아이콘 (질문/답변에 더 적합)
                 )
                 
                 Spacer(modifier = Modifier.height(17.dp)) // 카드 간격
@@ -85,13 +89,13 @@ fun HomeScreen(
                     title = "모의면접",
                     description = "모의면접을 하며\n실력을 키워봐요!",
                     backgroundColor = StudyWithPurple, // #D9C7E7
-                    onClick = { onNavigate(Screen.Interview.route) },
+                    onClick = { onNavigate(Screen.InterviewPractice.route) },
                     showMusicIcon = true
                 )
                 
                 Spacer(modifier = Modifier.height(17.dp)) // 카드 간격
                 
-                // 3. 모의면접 저장소 (파란색)
+                // 3. 모의면접 저장소 (파란색) - group28.png 사용
                 ActionCard(
                     title = "모의면접 저장소",
                     description = "면접에 대한 피드백을\n들으며 복기를 해보아요!",
@@ -99,7 +103,7 @@ fun HomeScreen(
                     onClick = { 
                         // 추후 구현할 저장소 화면
                     },
-                    showClockIcon = true
+                    showGroup28Icon = true
                 )
                 
                 Spacer(modifier = Modifier.height(24.dp))
@@ -186,6 +190,16 @@ private fun StatusBar() {
                         .background(StudyWithBlack)
                 )
             }
+            
+            Spacer(modifier = Modifier.width(5.dp))
+            
+            // 피그마 notification_2.png 알림 아이콘
+            Image(
+                painter = painterResource(id = R.drawable.notification_2),
+                contentDescription = "알림",
+                modifier = Modifier.size(24.dp),
+                contentScale = ContentScale.Fit
+            )
         }
     }
 }
@@ -237,6 +251,7 @@ private fun ActionCard(
     onClick: () -> Unit,
     showMusicIcon: Boolean = false,
     showClockIcon: Boolean = false,
+    showGroup28Icon: Boolean = false,
     iconEmoji: String = "📚"
 ) {
     var isPressed by remember { mutableStateOf(false) }
@@ -300,40 +315,38 @@ private fun ActionCard(
             ) {
                 when {
                     showMusicIcon -> {
-                        // 피그마 music 컴포넌트 스타일
-                        Box(
+                        // 피그마 music 컴포넌트 - 실제 music.png 이미지 사용
+                        Image(
+                            painter = painterResource(id = R.drawable.music),
+                            contentDescription = "음악 아이콘",
                             modifier = Modifier
-                                .size(80.dp)
+                                .size(122.dp) // 피그마 정확한 크기 (122x122)
                                 .align(Alignment.Center)
-                                .background(
-                                    Color.White.copy(alpha = 0.3f),
-                                    CircleShape
-                                )
-                        ) {
-                            Text(
-                                text = "🎵",
-                                fontSize = 40.sp,
-                                modifier = Modifier.align(Alignment.Center)
-                            )
-                        }
+                                .offset(x = 10.dp, y = (-2).dp), // 피그마 정확한 위치
+                            contentScale = ContentScale.Fit
+                        )
                     }
                     showClockIcon -> {
-                        // 피그마 clock 컴포넌트 스타일
-                        Box(
+                        // 피그마 clock 컴포넌트 - 실제 clock.png 이미지 사용  
+                        Image(
+                            painter = painterResource(id = R.drawable.clock),
+                            contentDescription = "시계 아이콘",
                             modifier = Modifier
-                                .size(80.dp)
-                                .align(Alignment.Center)
-                                .background(
-                                    Color.White.copy(alpha = 0.3f),
-                                    CircleShape
-                                )
-                        ) {
-                            Text(
-                                text = "🕐",
-                                fontSize = 40.sp,
-                                modifier = Modifier.align(Alignment.Center)
-                            )
-                        }
+                                .size(115.dp) // 피그마 정확한 크기 (115x115)
+                                .align(Alignment.Center),
+                            contentScale = ContentScale.Fit
+                        )
+                    }
+                    showGroup28Icon -> {
+                        // 피그마 group28.png - 면접질문 저장소 옆 이미지
+                        Image(
+                            painter = painterResource(id = R.drawable.group28),
+                            contentDescription = "Group28 아이콘",
+                            modifier = Modifier
+                                .size(100.dp) // 적절한 크기로 조정
+                                .align(Alignment.Center),
+                            contentScale = ContentScale.Fit
+                        )
                     }
                     else -> {
                         // 기본 아이콘

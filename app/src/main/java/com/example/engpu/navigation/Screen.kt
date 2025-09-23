@@ -10,6 +10,7 @@ sealed class Screen(val route: String) {
     object SignUp5 : Screen("signup5")
     object SignUp6 : Screen("signup6")
     object Login : Screen("login")
+    object ForgotPassword : Screen("forgot_password")
     
     // Main App Screens
     object Home : Screen("home")
@@ -19,6 +20,7 @@ sealed class Screen(val route: String) {
     
     // Additional Screens
     object InterviewPractice : Screen("interview_practice")
+    object InterviewResult : Screen("interview_result")
     object InterviewSaved : Screen("interview_saved")
     object QuestionRepository : Screen("question_repository")
 }

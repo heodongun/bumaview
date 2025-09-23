@@ -13,6 +13,7 @@ import com.example.engpu.data.SignUpData
 import com.example.engpu.navigation.Screen
 import com.example.engpu.ui.screens.auth.*
 import com.example.engpu.ui.screens.main.*
+import com.example.engpu.ui.screens.interview.*
 import com.example.engpu.ui.theme.StudyWithTheme
 
 class MainActivity : ComponentActivity() {
@@ -112,7 +113,19 @@ fun StudyWithApp() {
             LoginScreen(
                 onLoginClick = { currentScreen = Screen.Home.route },
                 onSignUpClick = { currentScreen = Screen.SignUp1.route },
+                onForgotPasswordClick = { currentScreen = Screen.ForgotPassword.route },
                 onBackClick = { currentScreen = Screen.Onboarding.route }
+            )
+        }
+        
+        Screen.ForgotPassword.route -> {
+            ForgotPasswordScreen(
+                onResetPasswordClick = { email ->
+                    // 비밀번호 재설정 이메일 전송 로직
+                    // 여기서는 단순히 로그인 화면으로 돌아감
+                    currentScreen = Screen.Login.route
+                },
+                onBackClick = { currentScreen = Screen.Login.route }
             )
         }
         
@@ -149,6 +162,16 @@ fun StudyWithApp() {
                 onNavigate = { screen -> currentScreen = screen },
                 userName = signUpData.name.ifEmpty { "사용자" },
                 userEmail = signUpData.email.ifEmpty { "user@example.com" }
+            )
+        }
+        
+        Screen.InterviewPractice.route -> {
+            InterviewPracticeScreen(
+                onBackClick = { currentScreen = Screen.Home.route },
+                onCompleteInterview = { 
+                    // 면접 완료 후 홈으로 돌아가기
+                    currentScreen = Screen.Home.route
+                }
             )
         }
     }

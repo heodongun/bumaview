@@ -3,7 +3,6 @@ package com.example.engpu.ui.screens.auth
 import androidx.compose.animation.*
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -12,29 +11,38 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.engpu.ui.components.StudyWithButton
 import com.example.engpu.ui.components.StudyWithInactiveButton
 import com.example.engpu.ui.components.StudyWithTextField
 import com.example.engpu.ui.theme.*
+import kotlinx.coroutines.delay
 
 @Composable
-fun LoginScreen(
-    onLoginClick: () -> Unit,
-    onSignUpClick: () -> Unit,
-    onForgotPasswordClick: () -> Unit,
+fun ForgotPasswordScreen(
+    onResetPasswordClick: (String) -> Unit,
     onBackClick: () -> Unit
 ) {
     var email by remember { mutableStateOf("") }
-    var password by remember { mutableStateOf("") }
     var isLoading by remember { mutableStateOf(false) }
-    var showErrorMessage by remember { mutableStateOf(false) }
+    var showSuccessMessage by remember { mutableStateOf(false) }
     var isVisible by remember { mutableStateOf(false) }
+    var shouldSendEmail by remember { mutableStateOf(false) }
     
     LaunchedEffect(Unit) {
         isVisible = true
+    }
+    
+    // 이메일 전송 처리
+    LaunchedEffect(shouldSendEmail) {
+        if (shouldSendEmail) {
+            delay(2000) // 2초 지연으로 이메일 전송 시뮬레이션
+            isLoading = false
+            showSuccessMessage = true
+            shouldSendEmail = false
+            onResetPasswordClick(email) // 콜백 호출
+        }
     }
     
     Box(
@@ -58,7 +66,7 @@ fun LoginScreen(
                 ) + fadeIn(animationSpec = tween(700, delayMillis = 200))
             ) {
                 Text(
-                    text = "로그인",
+                    text = "비밀번호 찾기",
                     fontSize = 24.sp,
                     fontWeight = FontWeight.SemiBold,
                     color = StudyWithBlack
@@ -76,10 +84,11 @@ fun LoginScreen(
                 ) + fadeIn(animationSpec = tween(700, delayMillis = 300))
             ) {
                 Text(
-                    text = "이메일과 비밀번호를 입력해주세요",
+                    text = "가입하신 이메일 주소를 입력하시면\n비밀번호 재설정 링크를 보내드립니다.",
                     fontSize = 14.sp,
                     fontWeight = FontWeight.SemiBold,
-                    color = StudyWithBlack
+                    color = StudyWithBlack,
+                    lineHeight = 18.sp
                 )
             }
             
@@ -97,76 +106,20 @@ fun LoginScreen(
                     value = email,
                     onValueChange = { 
                         email = it
-                        showErrorMessage = false
+                        showSuccessMessage = false
                     },
-                    placeholder = "이메일을 입력해주세요.",
+                    placeholder = "이메일을 입력해주세요",
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(40.dp)
                 )
             }
             
-            Spacer(modifier = Modifier.height(11.dp))
+            Spacer(modifier = Modifier.height(20.dp))
             
-            // Sign Up Link with fade animation
+            // Success Message with slide animation
             AnimatedVisibility(
-                visible = isVisible,
-                enter = fadeIn(animationSpec = tween(600, delayMillis = 500))
-            ) {
-                Text(
-                    text = "계정이 없나요? 회원가입",
-                    fontSize = 12.sp,
-                    fontWeight = FontWeight.Normal,
-                    color = StudyWithBlack,
-                    textDecoration = TextDecoration.Underline,
-                    modifier = Modifier.clickable { onSignUpClick() }
-                )
-            }
-            
-            Spacer(modifier = Modifier.height(48.dp))
-            
-            // Password Input Field with slide animation
-            AnimatedVisibility(
-                visible = isVisible,
-                enter = slideInHorizontally(
-                    initialOffsetX = { it },
-                    animationSpec = tween(800, delayMillis = 600)
-                ) + fadeIn(animationSpec = tween(800, delayMillis = 600))
-            ) {
-                StudyWithTextField(
-                    value = password,
-                    onValueChange = { 
-                        password = it
-                        showErrorMessage = false
-                    },
-                    placeholder = "비밀번호를 입력해주세요.",
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(40.dp),
-                    isPassword = true
-                )
-            }
-            
-            Spacer(modifier = Modifier.height(11.dp))
-            
-            // Forgot Password Link with fade animation
-            AnimatedVisibility(
-                visible = isVisible,
-                enter = fadeIn(animationSpec = tween(600, delayMillis = 700))
-            ) {
-                Text(
-                    text = "비밀번호를 잃어버리셨나요? 비밀번호 찾기",
-                    fontSize = 12.sp,
-                    fontWeight = FontWeight.Normal,
-                    color = StudyWithBlack,
-                    textDecoration = TextDecoration.Underline,
-                    modifier = Modifier.clickable { onForgotPasswordClick() }
-                )
-            }
-            
-            // Error Message with slide animation
-            AnimatedVisibility(
-                visible = showErrorMessage,
+                visible = showSuccessMessage,
                 enter = slideInVertically(
                     initialOffsetY = { -it },
                     animationSpec = tween(400)
@@ -176,39 +129,42 @@ fun LoginScreen(
                     animationSpec = tween(400)
                 ) + fadeOut(animationSpec = tween(400))
             ) {
-                Column {
-                    Spacer(modifier = Modifier.height(16.dp))
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 8.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = Color.White.copy(alpha = 0.9f)
+                    ),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+                ) {
                     Text(
-                        text = "이메일 또는 비밀번호가 올바르지 않습니다.",
+                        text = "비밀번호 재설정 링크가 이메일로 전송되었습니다.\n이메일을 확인해주세요.",
                         fontSize = 12.sp,
-                        color = androidx.compose.ui.graphics.Color.Red
+                        color = StudyWithBlack,
+                        modifier = Modifier.padding(16.dp),
+                        lineHeight = 16.sp
                     )
                 }
             }
             
             Spacer(modifier = Modifier.weight(1f))
             
-            // Login Button with slide up animation
+            // Reset Password Button with slide up animation
             AnimatedVisibility(
                 visible = isVisible,
                 enter = slideInVertically(
                     initialOffsetY = { it },
-                    animationSpec = tween(700, delayMillis = 800)
-                ) + fadeIn(animationSpec = tween(700, delayMillis = 800))
+                    animationSpec = tween(700, delayMillis = 500)
+                ) + fadeIn(animationSpec = tween(700, delayMillis = 500))
             ) {
                 when {
-                    email.isNotBlank() && password.isNotBlank() && !isLoading -> {
+                    email.isNotBlank() && email.contains("@") && !isLoading -> {
                         StudyWithButton(
-                            text = "로그인",
+                            text = "비밀번호 재설정 링크 보내기",
                             onClick = { 
                                 isLoading = true
-                                // Simulate login process
-                                if (email.contains("@") && password.length >= 6) {
-                                    onLoginClick()
-                                } else {
-                                    isLoading = false
-                                    showErrorMessage = true
-                                }
+                                shouldSendEmail = true
                             },
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -219,7 +175,7 @@ fun LoginScreen(
                     }
                     isLoading -> {
                         StudyWithButton(
-                            text = "로그인 중...",
+                            text = "전송 중...",
                             onClick = { },
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -229,7 +185,7 @@ fun LoginScreen(
                     }
                     else -> {
                         StudyWithInactiveButton(
-                            text = "로그인",
+                            text = "비밀번호 재설정 링크 보내기",
                             onClick = { },
                             modifier = Modifier
                                 .fillMaxWidth()
