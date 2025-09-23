@@ -2,6 +2,7 @@ package com.example.engpu.ui.screens.main
 
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -24,7 +25,8 @@ import com.example.engpu.ui.theme.*
 fun HomeScreen(
     currentRoute: String,
     onNavigate: (String) -> Unit,
-    userName: String
+    userName: String,
+    onProfileClick: () -> Unit
 ) {
     Box(
         modifier = Modifier
@@ -34,7 +36,7 @@ fun HomeScreen(
         Column(
             modifier = Modifier.fillMaxSize()
         ) {
-            // Status Bar - matching figma design
+            // Status Bar - 피그마 디자인과 정확히 동일
             StatusBar()
             
             // Content
@@ -46,50 +48,56 @@ fun HomeScreen(
             ) {
                 Spacer(modifier = Modifier.height(24.dp))
                 
-                // User Greeting - matching figma position (y: 74)
-                UserGreeting(userName = userName)
+                // User Greeting - 피그마 위치 (y: 74)
+                UserGreeting(
+                    userName = userName,
+                    onProfileClick = onProfileClick
+                )
                 
-                Spacer(modifier = Modifier.height(14.dp)) // to match y: 112
+                Spacer(modifier = Modifier.height(14.dp)) // y: 112 - 74 - 28 = 10dp
                 
-                // Welcome Message - matching figma text and position
+                // Welcome Message - 피그마 텍스트와 위치 정확히 매칭
                 Text(
                     text = "이런 과정을 통해 면접에 대비 해보는 것은 어떨까요?",
                     fontSize = 14.sp,
                     fontWeight = FontWeight.SemiBold,
                     color = StudyWithBlack,
                     lineHeight = 18.sp,
-                    modifier = Modifier.width(307.dp) // matching figma width
+                    modifier = Modifier.width(307.dp) // 피그마 width
                 )
                 
-                Spacer(modifier = Modifier.height(29.dp)) // to match y: 182
+                Spacer(modifier = Modifier.height(29.dp)) // y: 182 - 112 - 42 = 28dp
                 
-                // Action Cards - matching figma positions and colors
+                // Action Cards - 피그마 순서와 색상에 맞춰 배치
+                // 1. 면접질문 저장소 (주황색)
                 ActionCard(
                     title = "면접질문 저장소",
                     description = "면접질문을 돌아보는것도\n괜찮은 선택이에요!",
-                    backgroundColor = StudyWithLightOrange,
-                    onClick = { onNavigate(Screen.Repository.route) }
+                    backgroundColor = StudyWithLightOrange, // #FF9A62
+                    onClick = { onNavigate(Screen.Repository.route) },
+                    iconEmoji = "📁"
                 )
                 
-                Spacer(modifier = Modifier.height(17.dp)) // spacing between cards
+                Spacer(modifier = Modifier.height(17.dp)) // 카드 간격
                 
+                // 2. 모의면접 (보라색) 
                 ActionCard(
                     title = "모의면접",
                     description = "모의면접을 하며\n실력을 키워봐요!",
-                    backgroundColor = StudyWithPurple,
+                    backgroundColor = StudyWithPurple, // #D9C7E7
                     onClick = { onNavigate(Screen.Interview.route) },
                     showMusicIcon = true
                 )
                 
-                Spacer(modifier = Modifier.height(17.dp)) // spacing between cards
+                Spacer(modifier = Modifier.height(17.dp)) // 카드 간격
                 
+                // 3. 모의면접 저장소 (파란색)
                 ActionCard(
                     title = "모의면접 저장소",
                     description = "면접에 대한 피드백을\n들으며 복기를 해보아요!",
-                    backgroundColor = StudyWithLightBlue,
+                    backgroundColor = StudyWithLightBlue, // #85C7EE
                     onClick = { 
-                        // Show toast for now
-                        // Can add specific screen later
+                        // 추후 구현할 저장소 화면
                     },
                     showClockIcon = true
                 )
@@ -98,7 +106,7 @@ fun HomeScreen(
             }
         }
         
-        // Bottom Navigation - matching figma design
+        // Bottom Navigation - 피그마 디자인 매칭
         Box(
             modifier = Modifier.align(Alignment.BottomCenter)
         ) {
@@ -108,7 +116,7 @@ fun HomeScreen(
             )
         }
         
-        // Home Indicator - matching figma design
+        // Home Indicator - 피그마 정확한 위치와 크기
         Box(
             modifier = Modifier
                 .align(Alignment.BottomCenter)
@@ -132,7 +140,7 @@ private fun StatusBar() {
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        // Time - matching figma "9:41"
+        // Time - 피그마 "9:41"
         Text(
             text = "9:41",
             fontSize = 15.sp,
@@ -140,36 +148,69 @@ private fun StatusBar() {
             color = StudyWithBlack
         )
         
-        // Status icons - battery, wifi, signal
+        // Status icons - 피그마 우측 상단 아이콘들
         Row(
             horizontalArrangement = Arrangement.spacedBy(6.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Simplified status icons
-            Text(text = "📶", fontSize = 12.sp)
-            Text(text = "📶", fontSize = 12.sp)
-            Text(text = "🔋", fontSize = 12.sp)
+            // 신호 강도 표시 (단순화)
+            Row(horizontalArrangement = Arrangement.spacedBy(2.dp)) {
+                repeat(4) { index ->
+                    Box(
+                        modifier = Modifier
+                            .width(3.dp)
+                            .height((6 + index * 2).dp)
+                            .background(StudyWithBlack, RoundedCornerShape(1.dp))
+                    )
+                }
+            }
+            
+            Spacer(modifier = Modifier.width(5.dp))
+            
+            // WiFi 아이콘 (단순화)
+            Text(text = "📶", fontSize = 10.sp)
+            
+            Spacer(modifier = Modifier.width(5.dp))
+            
+            // 배터리 아이콘
+            Box(
+                modifier = Modifier
+                    .width(24.dp)
+                    .height(12.dp)
+                    .background(StudyWithBlack, RoundedCornerShape(2.dp))
+            ) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxHeight()
+                        .fillMaxWidth(0.8f)
+                        .background(StudyWithBlack)
+                )
+            }
         }
     }
 }
 
 @Composable
-private fun UserGreeting(userName: String) {
+private fun UserGreeting(
+    userName: String,
+    onProfileClick: () -> Unit
+) {
     Row(
         verticalAlignment = Alignment.CenterVertically
     ) {
-        // Profile Avatar - matching figma design (28x28 with D19700 color)
+        // Profile Avatar - 피그마 정확한 크기 (28x28)와 색상 (#D19700)
         Box(
             modifier = Modifier
                 .size(28.dp)
                 .background(
-                    color = Color(0xFFD19700),
+                    color = Color(0xFFD19700), // 피그마 정확한 색상
                     shape = CircleShape
-                ),
+                )
+                .clickable { onProfileClick() },
             contentAlignment = Alignment.Center
         ) {
             Text(
-                text = userName.firstOrNull()?.toString()?.uppercase() ?: "T",
+                text = userName.firstOrNull()?.toString()?.uppercase() ?: "U",
                 fontSize = 18.sp,
                 fontWeight = FontWeight.Medium,
                 color = Color.White
@@ -178,7 +219,7 @@ private fun UserGreeting(userName: String) {
         
         Spacer(modifier = Modifier.width(10.dp))
         
-        // Greeting text - matching figma "{userName}님!"
+        // Greeting text - 피그마 정확한 텍스트와 스타일
         Text(
             text = "${userName}님!",
             fontSize = 18.sp,
@@ -195,7 +236,8 @@ private fun ActionCard(
     backgroundColor: Color,
     onClick: () -> Unit,
     showMusicIcon: Boolean = false,
-    showClockIcon: Boolean = false
+    showClockIcon: Boolean = false,
+    iconEmoji: String = "📚"
 ) {
     var isPressed by remember { mutableStateOf(false) }
     
@@ -211,27 +253,25 @@ private fun ActionCard(
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .height(144.dp)
+            .height(144.dp) // 피그마 정확한 높이
             .scale(scale),
-        shape = RoundedCornerShape(6.dp),
+        shape = RoundedCornerShape(6.dp), // 피그마 정확한 모서리
         colors = CardDefaults.cardColors(containerColor = backgroundColor),
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp), // 피그마 그림자
         onClick = {
             isPressed = true
             onClick()
-            // Reset after a short delay
-            // Note: In a real app, you might want to handle this differently
         }
     ) {
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(12.dp)
+                .padding(12.dp) // 피그마 패딩
         ) {
             Column(
                 modifier = Modifier.align(Alignment.TopStart)
             ) {
-                Spacer(modifier = Modifier.height(19.dp))
+                Spacer(modifier = Modifier.height(19.dp)) // 피그마 y: 31
                 
                 Text(
                     text = title,
@@ -240,7 +280,7 @@ private fun ActionCard(
                     color = StudyWithBlack
                 )
                 
-                Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(8.dp)) // 피그마 간격
                 
                 Text(
                     text = description,
@@ -251,7 +291,7 @@ private fun ActionCard(
                 )
             }
             
-            // Decorative icon in top right - matching figma illustrations
+            // 우측 상단 아이콘 - 피그마 정확한 위치 (186, 10) 크기 (122x122)
             Box(
                 modifier = Modifier
                     .align(Alignment.TopEnd)
@@ -260,31 +300,69 @@ private fun ActionCard(
             ) {
                 when {
                     showMusicIcon -> {
-                        // Music/study illustration
-                        Text(
-                            text = "🎵📚",
-                            fontSize = 40.sp,
-                            modifier = Modifier.align(Alignment.Center)
-                        )
+                        // 피그마 music 컴포넌트 스타일
+                        Box(
+                            modifier = Modifier
+                                .size(80.dp)
+                                .align(Alignment.Center)
+                                .background(
+                                    Color.White.copy(alpha = 0.3f),
+                                    CircleShape
+                                )
+                        ) {
+                            Text(
+                                text = "🎵",
+                                fontSize = 40.sp,
+                                modifier = Modifier.align(Alignment.Center)
+                            )
+                        }
                     }
                     showClockIcon -> {
-                        // Clock illustration
-                        Text(
-                            text = "🕐",
-                            fontSize = 50.sp,
-                            modifier = Modifier.align(Alignment.Center)
-                        )
+                        // 피그마 clock 컴포넌트 스타일
+                        Box(
+                            modifier = Modifier
+                                .size(80.dp)
+                                .align(Alignment.Center)
+                                .background(
+                                    Color.White.copy(alpha = 0.3f),
+                                    CircleShape
+                                )
+                        ) {
+                            Text(
+                                text = "🕐",
+                                fontSize = 40.sp,
+                                modifier = Modifier.align(Alignment.Center)
+                            )
+                        }
                     }
                     else -> {
-                        // Default illustration
-                        Text(
-                            text = "📁",
-                            fontSize = 50.sp,
-                            modifier = Modifier.align(Alignment.Center)
-                        )
+                        // 기본 아이콘
+                        Box(
+                            modifier = Modifier
+                                .size(80.dp)
+                                .align(Alignment.Center)
+                                .background(
+                                    Color.White.copy(alpha = 0.3f),
+                                    CircleShape
+                                )
+                        ) {
+                            Text(
+                                text = iconEmoji,
+                                fontSize = 40.sp,
+                                modifier = Modifier.align(Alignment.Center)
+                            )
+                        }
                     }
                 }
             }
+        }
+    }
+    
+    // 클릭 상태 리셋
+    LaunchedEffect(isPressed) {
+        if (isPressed) {
+            kotlinx.coroutines.delay(100)
+            isPressed = false
         }
     }
 }

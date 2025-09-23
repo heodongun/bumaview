@@ -1,5 +1,7 @@
 package com.example.engpu.ui.screens.auth
 
+import androidx.compose.animation.*
+import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
@@ -21,7 +23,12 @@ fun SignUpScreen3(
     onNextClick: (String) -> Unit,
     onBackClick: () -> Unit
 ) {
-    var password by remember { mutableStateOf("") }
+    var email by remember { mutableStateOf("") }
+    var isVisible by remember { mutableStateOf(false) }
+    
+    LaunchedEffect(Unit) {
+        isVisible = true
+    }
     
     Box(
         modifier = Modifier
@@ -31,77 +38,138 @@ fun SignUpScreen3(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(24.dp)
+                .padding(horizontal = 24.dp)
         ) {
             Spacer(modifier = Modifier.height(50.dp))
             
-            // Progress Indicator
-            StudyWithProgressIndicator(progress = 3f / 6f)
+            // Progress Indicator - 3/6 단계 with enhanced progress bar
+            AnimatedVisibility(
+                visible = isVisible,
+                enter = slideInHorizontally(
+                    initialOffsetX = { -it },
+                    animationSpec = tween(600)
+                ) + fadeIn(animationSpec = tween(600))
+            ) {
+                Box(modifier = Modifier.offset(x = 6.dp)) { // x: 30 from figma
+                    StudyWithProgressIndicator(
+                        progress = 3f / 6f,
+                        modifier = Modifier
+                            .width(190.dp) // matching figma width
+                            .height(4.dp)
+                    )
+                }
+            }
             
             Spacer(modifier = Modifier.height(48.dp))
             
-            // Title
-            Text(
-                text = "비밀번호를 설정하세요",
-                fontSize = 24.sp,
-                fontWeight = FontWeight.SemiBold,
-                color = StudyWithBlack
-            )
+            // Title - matching figma "메일주소를 입력하세요"
+            AnimatedVisibility(
+                visible = isVisible,
+                enter = slideInVertically(
+                    initialOffsetY = { -it / 2 },
+                    animationSpec = tween(700, delayMillis = 200)
+                ) + fadeIn(animationSpec = tween(700, delayMillis = 200))
+            ) {
+                Text(
+                    text = "메일주소를 입력하세요",
+                    fontSize = 24.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = StudyWithBlack,
+                    lineHeight = 28.sp // matching figma height: 56dp for 2 lines
+                )
+            }
             
             Spacer(modifier = Modifier.height(15.dp))
             
-            // Subtitle
-            Text(
-                text = "안전한 비밀번호를 설정해주세요",
-                fontSize = 14.sp,
-                fontWeight = FontWeight.SemiBold,
-                color = StudyWithBlack
-            )
+            // Subtitle - matching figma "거의 다 왔어요! 조금만 힘내세요"
+            AnimatedVisibility(
+                visible = isVisible,
+                enter = slideInVertically(
+                    initialOffsetY = { -it / 2 },
+                    animationSpec = tween(700, delayMillis = 300)
+                ) + fadeIn(animationSpec = tween(700, delayMillis = 300))
+            ) {
+                Text(
+                    text = "거의 다 왔어요! 조금만 힘내세요",
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = StudyWithBlack,
+                    modifier = Modifier.offset(x = 3.dp) // x: 27 from figma
+                )
+            }
             
-            Spacer(modifier = Modifier.height(35.dp))
+            Spacer(modifier = Modifier.height(21.dp)) // y: 184 - 140 - 20 = 24dp, adjusted
             
-            // Password Input Field
-            StudyWithTextField(
-                value = password,
-                onValueChange = { password = it },
-                placeholder = "비밀번호를 입력해주세요 (8자 이상)",
-                modifier = Modifier.fillMaxWidth(),
-                isPassword = true
-            )
+            // Email Input Field - matching figma position
+            AnimatedVisibility(
+                visible = isVisible,
+                enter = slideInHorizontally(
+                    initialOffsetX = { it },
+                    animationSpec = tween(800, delayMillis = 400)
+                ) + fadeIn(animationSpec = tween(800, delayMillis = 400))
+            ) {
+                StudyWithTextField(
+                    value = email,
+                    onValueChange = { email = it },
+                    placeholder = "메일 주소를 입력해주세요 (예: qwe@qwe.q)",
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(40.dp)
+                )
+            }
             
             Spacer(modifier = Modifier.weight(1f))
             
-            // Next Button
-            if (password.length >= 8) {
-                StudyWithButton(
-                    text = "다음",
-                    onClick = { onNextClick(password) },
-                    modifier = Modifier.fillMaxWidth()
-                )
-            } else {
-                StudyWithInactiveButton(
-                    text = "다음",
-                    onClick = { },
-                    modifier = Modifier.fillMaxWidth(),
-                    enabled = false
-                )
+            // Next Button - matching figma position
+            AnimatedVisibility(
+                visible = isVisible,
+                enter = slideInVertically(
+                    initialOffsetY = { it },
+                    animationSpec = tween(700, delayMillis = 500)
+                ) + fadeIn(animationSpec = tween(700, delayMillis = 500))
+            ) {
+                if (email.isNotBlank() && email.contains("@")) {
+                    StudyWithButton(
+                        text = "다음",
+                        onClick = { onNextClick(email) },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(55.dp),
+                        backgroundColor = StudyWithBlack,
+                        textColor = StudyWithYellow
+                    )
+                } else {
+                    StudyWithInactiveButton(
+                        text = "다음",
+                        onClick = { },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(55.dp),
+                        enabled = false
+                    )
+                }
             }
             
             Spacer(modifier = Modifier.height(60.dp))
         }
         
         // Back Button
-        IconButton(
-            onClick = onBackClick,
-            modifier = Modifier
-                .padding(16.dp)
-                .size(42.dp)
+        AnimatedVisibility(
+            visible = isVisible,
+            enter = fadeIn(animationSpec = tween(500, delayMillis = 100))
         ) {
-            Icon(
-                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                contentDescription = "뒤로가기",
-                tint = StudyWithBlack
-            )
+            IconButton(
+                onClick = onBackClick,
+                modifier = Modifier
+                    .padding(16.dp)
+                    .size(42.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                    contentDescription = "뒤로가기",
+                    tint = StudyWithBlack
+                )
+            }
         }
     }
 }

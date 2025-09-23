@@ -9,6 +9,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import com.example.engpu.data.SignUpData
 import com.example.engpu.navigation.Screen
 import com.example.engpu.ui.screens.auth.*
 import com.example.engpu.ui.screens.main.*
@@ -34,8 +35,7 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun StudyWithApp() {
     var currentScreen by remember { mutableStateOf(Screen.Onboarding.route) }
-    var userEmail by remember { mutableStateOf("") }
-    var userName by remember { mutableStateOf("") }
+    var signUpData by remember { mutableStateOf(SignUpData()) }
     
     when (currentScreen) {
         Screen.Onboarding.route -> {
@@ -45,10 +45,11 @@ fun StudyWithApp() {
             )
         }
         
+        // 회원가입 플로우: 이름 → 희망직무 → 이메일 → 확인코드 → 면접시간 → 비밀번호
         Screen.SignUp1.route -> {
             SignUpScreen1(
                 onNextClick = { name ->
-                    userName = name
+                    signUpData = signUpData.copy(name = name)
                     currentScreen = Screen.SignUp2.route
                 },
                 onBackClick = { currentScreen = Screen.Onboarding.route },
@@ -58,8 +59,8 @@ fun StudyWithApp() {
         
         Screen.SignUp2.route -> {
             SignUpScreen2(
-                onNextClick = { email ->
-                    userEmail = email
+                onNextClick = { jobPosition ->
+                    signUpData = signUpData.copy(jobPosition = jobPosition)
                     currentScreen = Screen.SignUp3.route
                 },
                 onBackClick = { currentScreen = Screen.SignUp1.route }
@@ -68,7 +69,8 @@ fun StudyWithApp() {
         
         Screen.SignUp3.route -> {
             SignUpScreen3(
-                onNextClick = { 
+                onNextClick = { email ->
+                    signUpData = signUpData.copy(email = email)
                     currentScreen = Screen.SignUp4.route
                 },
                 onBackClick = { currentScreen = Screen.SignUp2.route }
@@ -77,7 +79,8 @@ fun StudyWithApp() {
         
         Screen.SignUp4.route -> {
             SignUpScreen4(
-                onNextClick = { 
+                onNextClick = { verificationCode ->
+                    signUpData = signUpData.copy(verificationCode = verificationCode)
                     currentScreen = Screen.SignUp5.route
                 },
                 onBackClick = { currentScreen = Screen.SignUp3.route }
@@ -86,7 +89,8 @@ fun StudyWithApp() {
         
         Screen.SignUp5.route -> {
             SignUpScreen5(
-                onNextClick = { 
+                onNextClick = { interviewTime ->
+                    signUpData = signUpData.copy(interviewTime = interviewTime)
                     currentScreen = Screen.SignUp6.route
                 },
                 onBackClick = { currentScreen = Screen.SignUp4.route }
@@ -100,7 +104,7 @@ fun StudyWithApp() {
                     currentScreen = Screen.Login.route 
                 },
                 onBackClick = { currentScreen = Screen.SignUp5.route },
-                userName = userName
+                userName = signUpData.name
             )
         }
         
@@ -116,8 +120,8 @@ fun StudyWithApp() {
             MainAppContent(
                 currentScreen = currentScreen,
                 onNavigate = { screen -> currentScreen = screen },
-                userName = userName.ifEmpty { "사용자" },
-                userEmail = userEmail.ifEmpty { "user@example.com" }
+                userName = signUpData.name.ifEmpty { "사용자" },
+                userEmail = signUpData.email.ifEmpty { "user@example.com" }
             )
         }
         
@@ -125,8 +129,8 @@ fun StudyWithApp() {
             MainAppContent(
                 currentScreen = currentScreen,
                 onNavigate = { screen -> currentScreen = screen },
-                userName = userName.ifEmpty { "사용자" },
-                userEmail = userEmail.ifEmpty { "user@example.com" }
+                userName = signUpData.name.ifEmpty { "사용자" },
+                userEmail = signUpData.email.ifEmpty { "user@example.com" }
             )
         }
         
@@ -134,8 +138,8 @@ fun StudyWithApp() {
             MainAppContent(
                 currentScreen = currentScreen,
                 onNavigate = { screen -> currentScreen = screen },
-                userName = userName.ifEmpty { "사용자" },
-                userEmail = userEmail.ifEmpty { "user@example.com" }
+                userName = signUpData.name.ifEmpty { "사용자" },
+                userEmail = signUpData.email.ifEmpty { "user@example.com" }
             )
         }
         
@@ -143,8 +147,8 @@ fun StudyWithApp() {
             MainAppContent(
                 currentScreen = currentScreen,
                 onNavigate = { screen -> currentScreen = screen },
-                userName = userName.ifEmpty { "사용자" },
-                userEmail = userEmail.ifEmpty { "user@example.com" }
+                userName = signUpData.name.ifEmpty { "사용자" },
+                userEmail = signUpData.email.ifEmpty { "user@example.com" }
             )
         }
     }
@@ -162,7 +166,8 @@ fun MainAppContent(
             HomeScreen(
                 currentRoute = currentScreen,
                 onNavigate = onNavigate,
-                userName = userName
+                userName = userName,
+                onProfileClick = { onNavigate(Screen.Profile.route) }
             )
         }
         Screen.Repository.route -> {

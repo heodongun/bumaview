@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="200dp"
+    android:height="200dp"
+    android:viewportWidth="200"
+    android:viewportHeight="200">
+    <!-- 간단한 면접 일러스트레이션 -->
+    <!-- 배경 박스 -->
+    <path
+        android:fillColor="#FFD233"
+        android:pathData="M50,50 L150,50 L150,150 L50,150 Z"/>
+    <!-- 문서 라인들 -->
+    <path
+        android:fillColor="#121212"
+        android:pathData="M70,70 L130,70 L130,80 L70,80 Z"/>
+    <path
+        android:fillColor="#121212"
+        android:pathData="M70,90 L130,90 L130,100 L70,100 Z"/>
+    <path
+        android:fillColor="#121212"
+        android:pathData="M70,110 L130,110 L130,120 L70,120 Z"/>
+    <!-- 마이크 아이콘 (원형을 path로 표현) -->
+    <path
+        android:fillColor="#FF9A62"
+        android:pathData="M100,132 C104.418,132 108,135.582 108,140 C108,144.418 104.418,148 100,148 C95.582,148 92,144.418 92,140 C92,135.582 95.582,132 100,132 Z"/>
+    <!-- 면접 심볼 추가 -->
+    <path
+        android:fillColor="#121212"
+        android:pathData="M95,160 L105,160 L105,165 L95,165 Z"/>
+</vector>
