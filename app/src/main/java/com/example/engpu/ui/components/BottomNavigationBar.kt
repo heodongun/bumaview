@@ -101,7 +101,7 @@ private fun BottomNavItemWithImage(
         Image(
             painter = painterResource(id = imageRes),
             contentDescription = label,
-            modifier = Modifier.size(50.dp), // 피그마 정확한 아이콘 크기
+            modifier = Modifier.size(100.dp), // 피그마 정확한 아이콘 크기
             contentScale = ContentScale.Fit
         )
 

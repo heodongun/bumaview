@@ -25,11 +25,11 @@ fun SignUpScreen2(
 ) {
     var jobPosition by remember { mutableStateOf("") }
     var isVisible by remember { mutableStateOf(false) }
-    
+
     LaunchedEffect(Unit) {
         isVisible = true
     }
-    
+
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -41,7 +41,7 @@ fun SignUpScreen2(
                 .padding(horizontal = 24.dp)
         ) {
             Spacer(modifier = Modifier.height(50.dp))
-            
+
             // Progress Indicator - 2/6 단계
             AnimatedVisibility(
                 visible = isVisible,
@@ -57,9 +57,9 @@ fun SignUpScreen2(
                         .height(4.dp)
                 )
             }
-            
+
             Spacer(modifier = Modifier.height(48.dp))
-            
+
             // Title - matching figma "희망 직무를 입력하세요"
             AnimatedVisibility(
                 visible = isVisible,
@@ -75,9 +75,9 @@ fun SignUpScreen2(
                     color = StudyWithBlack
                 )
             }
-            
+
             Spacer(modifier = Modifier.height(15.dp))
-            
+
             // Subtitle - matching figma "희망직무가 없다면 없음을 적어주세요."
             AnimatedVisibility(
                 visible = isVisible,
@@ -93,9 +93,9 @@ fun SignUpScreen2(
                     color = StudyWithBlack
                 )
             }
-            
+
             Spacer(modifier = Modifier.height(27.dp)) // y: 190 - 140 - 20 = 30dp
-            
+
             // Job Position Input Field - matching figma position
             AnimatedVisibility(
                 visible = isVisible,
@@ -113,9 +113,9 @@ fun SignUpScreen2(
                         .height(40.dp)
                 )
             }
-            
+
             Spacer(modifier = Modifier.weight(1f))
-            
+
             // Next Button - matching figma position
             AnimatedVisibility(
                 visible = isVisible,
@@ -145,10 +145,10 @@ fun SignUpScreen2(
                     )
                 }
             }
-            
+
             Spacer(modifier = Modifier.height(60.dp))
         }
-        
+
         // Back Button
         AnimatedVisibility(
             visible = isVisible,

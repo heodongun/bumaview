@@ -33,9 +33,12 @@ data class AppUiState(
 )
 
 class AppViewModel(application: Application) : AndroidViewModel(application) {
-    private val authRepository = AuthRepository().apply {
+    // Enable dev mode for debug builds (skips email verification)
+    private val isDev = true  // Set to false for production
+
+    private val authRepository = AuthRepository(devMode = isDev).apply {
         setContext(application.applicationContext)
-        println("✅ [AppViewModel] AuthRepository context configured")
+        println("✅ [AppViewModel] AuthRepository context configured (DEV MODE: $isDev)")
     }
     private val interviewRepository = InterviewRepository()
     private val geminiRepository = GeminiRepository()

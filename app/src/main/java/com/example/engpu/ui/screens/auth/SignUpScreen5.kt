@@ -5,18 +5,20 @@ import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
 import com.example.engpu.ui.components.StudyWithButton
 import com.example.engpu.ui.components.StudyWithInactiveButton
 import com.example.engpu.ui.components.StudyWithProgressIndicator
@@ -24,19 +26,13 @@ import com.example.engpu.ui.theme.*
 
 @Composable
 fun SignUpScreen5(
-    onNextClick: (String) -> Unit,
+    onNextClick: (String) -> Unit, // "14:30" 형식으로 시간 전달
     onBackClick: () -> Unit
 ) {
-    var selectedTime by remember { mutableStateOf("") }
-    var isVisible by remember { mutableStateOf(false) }
-    
-    val timeOptions = listOf(
-        "30초" to "30초",
-        "1분" to "1분",
-        "1분 30초" to "1분 30초",
-        "2분" to "2분",
-        "3분" to "3분"
-    )
+    var selectedHour: Int by remember { mutableStateOf(9) } // 기본값 오전 9시
+    var selectedMinute: Int by remember { mutableStateOf(0) } // 기본값 00분
+    var isVisible: Boolean by remember { mutableStateOf(false) }
+    var showTimePicker: Boolean by remember { mutableStateOf(false) }
     
     LaunchedEffect(Unit) {
         isVisible = true
@@ -81,11 +77,10 @@ fun SignUpScreen5(
                 ) + fadeIn(animationSpec = tween(700, delayMillis = 200))
             ) {
                 Text(
-                    text = "면접 질문 시간을 설정하세요",
+                    text = "면접 알림 시간 설정",
                     fontSize = 24.sp,
                     fontWeight = FontWeight.SemiBold,
-                    color = StudyWithBlack,
-                    lineHeight = 28.sp
+                    color = StudyWithBlack
                 )
             }
             
@@ -100,33 +95,115 @@ fun SignUpScreen5(
                 ) + fadeIn(animationSpec = tween(700, delayMillis = 300))
             ) {
                 Text(
-                    text = "각 질문마다 답변할 시간을 선택해주세요.\n나중에 변경할 수 있어요!",
+                    text = "매일 면접 질문을 받고 싶은 시간을 선택해주세요.\n이메일로 오늘의 면접 질문을 보내드립니다.",
                     fontSize = 14.sp,
                     fontWeight = FontWeight.SemiBold,
                     color = StudyWithBlack,
-                    lineHeight = 18.sp
+                    lineHeight = 20.sp
                 )
             }
             
-            Spacer(modifier = Modifier.height(40.dp))
+            Spacer(modifier = Modifier.height(50.dp))
             
-            // Time Options
+            // Time Display
             AnimatedVisibility(
                 visible = isVisible,
-                enter = slideInVertically(
-                    initialOffsetY = { it / 2 },
+                enter = slideInHorizontally(
+                    initialOffsetX = { it },
                     animationSpec = tween(800, delayMillis = 400)
                 ) + fadeIn(animationSpec = tween(800, delayMillis = 400))
             ) {
                 Column(
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    modifier = Modifier.fillMaxWidth()
                 ) {
-                    timeOptions.forEachIndexed { index, (display, value) ->
-                        TimeOptionCard(
-                            text = display,
-                            isSelected = selectedTime == value,
-                            onClick = { selectedTime = value },
-                            delay = index * 100
+                    Text(
+                        text = "선택한 시간",
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Normal,
+                        color = StudyWithBlack.copy(alpha = 0.7f)
+                    )
+                    
+                    Spacer(modifier = Modifier.height(16.dp))
+                    
+                    Card(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(80.dp)
+                            .clickable { showTimePicker = true },
+                        colors = CardDefaults.cardColors(containerColor = Color.White),
+                        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+                    ) {
+                        Box(
+                            contentAlignment = Alignment.Center,
+                            modifier = Modifier.fillMaxSize()
+                        ) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.Center
+                            ) {
+                                Text(
+                                    text = String.format("%02d", selectedHour),
+                                    fontSize = 36.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = StudyWithBlack
+                                )
+                                Text(
+                                    text = ":",
+                                    fontSize = 36.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = StudyWithBlack,
+                                    modifier = Modifier.padding(horizontal = 4.dp)
+                                )
+                                Text(
+                                    text = String.format("%02d", selectedMinute),
+                                    fontSize = 36.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = StudyWithBlack
+                                )
+                            }
+                        }
+                    }
+                    
+                    Spacer(modifier = Modifier.height(8.dp))
+                    
+                    Text(
+                        text = "탭하여 시간 변경",
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Normal,
+                        color = StudyWithBlack.copy(alpha = 0.5f)
+                    )
+                }
+            }
+            
+            Spacer(modifier = Modifier.height(30.dp))
+            
+            // Information
+            AnimatedVisibility(
+                visible = isVisible,
+                enter = fadeIn(animationSpec = tween(600, delayMillis = 500))
+            ) {
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(
+                        containerColor = StudyWithLightBlue.copy(alpha = 0.2f)
+                    )
+                ) {
+                    Column(
+                        modifier = Modifier.padding(16.dp)
+                    ) {
+                        Text(
+                            text = "💡 알림 정보",
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = StudyWithBlack
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            text = "• 매일 설정한 시간에 면접 질문을 받습니다\n• 언제든지 프로필에서 시간을 변경할 수 있습니다\n• 알림을 끄고 싶으면 프로필에서 설정 가능합니다",
+                            fontSize = 12.sp,
+                            color = StudyWithBlack.copy(alpha = 0.8f),
+                            lineHeight = 18.sp
                         )
                     }
                 }
@@ -142,26 +219,18 @@ fun SignUpScreen5(
                     animationSpec = tween(700, delayMillis = 600)
                 ) + fadeIn(animationSpec = tween(700, delayMillis = 600))
             ) {
-                if (selectedTime.isNotBlank()) {
-                    StudyWithButton(
-                        text = "다음",
-                        onClick = { onNextClick(selectedTime) },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(55.dp),
-                        backgroundColor = StudyWithBlack,
-                        textColor = StudyWithYellow
-                    )
-                } else {
-                    StudyWithInactiveButton(
-                        text = "다음",
-                        onClick = { },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(55.dp),
-                        enabled = false
-                    )
-                }
+                StudyWithButton(
+                    text = "다음",
+                    onClick = { 
+                        val timeString: String = String.format("%02d:%02d", selectedHour, selectedMinute)
+                        onNextClick(timeString)
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(55.dp),
+                    backgroundColor = StudyWithBlack,
+                    textColor = StudyWithYellow
+                )
             }
             
             Spacer(modifier = Modifier.height(60.dp))
@@ -185,67 +254,188 @@ fun SignUpScreen5(
                 )
             }
         }
+        
+        // Time Picker Dialog
+        if (showTimePicker) {
+            TimePickerDialog(
+                currentHour = selectedHour,
+                currentMinute = selectedMinute,
+                onTimeSelected = { hour, minute ->
+                    selectedHour = hour
+                    selectedMinute = minute
+                    showTimePicker = false
+                },
+                onDismiss = { showTimePicker = false }
+            )
+        }
     }
 }
 
 @Composable
-private fun TimeOptionCard(
-    text: String,
-    isSelected: Boolean,
-    onClick: () -> Unit,
-    delay: Int = 0
+fun TimePickerDialog(
+    currentHour: Int,
+    currentMinute: Int,
+    onTimeSelected: (hour: Int, minute: Int) -> Unit,
+    onDismiss: () -> Unit
 ) {
-    var isVisible by remember { mutableStateOf(false) }
+    var tempHour: Int by remember { mutableStateOf(currentHour) }
+    var tempMinute: Int by remember { mutableStateOf(currentMinute) }
     
-    LaunchedEffect(Unit) {
-        kotlinx.coroutines.delay(delay.toLong())
-        isVisible = true
-    }
-    
-    AnimatedVisibility(
-        visible = isVisible,
-        enter = slideInHorizontally(
-            initialOffsetX = { it },
-            animationSpec = tween(500)
-        ) + fadeIn(animationSpec = tween(500))
-    ) {
+    Dialog(onDismissRequest = onDismiss) {
         Card(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(56.dp)
-                .clickable { onClick() },
-            shape = RoundedCornerShape(8.dp),
-            colors = CardDefaults.cardColors(
-                containerColor = if (isSelected) StudyWithBlack else Color.White
-            ),
-            elevation = CardDefaults.cardElevation(
-                defaultElevation = if (isSelected) 4.dp else 2.dp
-            )
+                .padding(16.dp),
+            colors = CardDefaults.cardColors(containerColor = Color.White)
         ) {
-            Box(
-                modifier = Modifier.fillMaxSize(),
-                contentAlignment = Alignment.Center
+            Column(
+                modifier = Modifier.padding(24.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Text(
-                    text = text,
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.Medium,
-                    color = if (isSelected) StudyWithYellow else StudyWithBlack
+                    text = "시간 선택",
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = StudyWithBlack
                 )
                 
-                if (isSelected) {
-                    Box(
-                        modifier = Modifier
-                            .align(Alignment.CenterEnd)
-                            .padding(end = 16.dp)
-                    ) {
-                        Text(
-                            text = "✓",
-                            fontSize = 18.sp,
-                            color = StudyWithYellow,
-                            fontWeight = FontWeight.Bold
-                        )
+                Spacer(modifier = Modifier.height(24.dp))
+                
+                Row(
+                    horizontalArrangement = Arrangement.Center,
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    // Hour Picker
+                    NumberPicker(
+                        value = tempHour,
+                        onValueChange = { tempHour = it },
+                        range = 0..23,
+                        label = "시"
+                    )
+                    
+                    Text(
+                        text = ":",
+                        fontSize = 24.sp,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(horizontal = 16.dp)
+                    )
+                    
+                    // Minute Picker
+                    NumberPicker(
+                        value = tempMinute,
+                        onValueChange = { tempMinute = it },
+                        range = listOf(0, 30), // 0분 또는 30분만 선택 가능
+                        label = "분"
+                    )
+                }
+                
+                Spacer(modifier = Modifier.height(24.dp))
+                
+                Row(
+                    horizontalArrangement = Arrangement.SpaceEvenly,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    TextButton(onClick = onDismiss) {
+                        Text("취소", color = StudyWithBlack)
                     }
+                    
+                    Button(
+                        onClick = { onTimeSelected(tempHour, tempMinute) },
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = StudyWithOrange
+                        )
+                    ) {
+                        Text("확인", color = Color.White)
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun NumberPicker(
+    value: Int,
+    onValueChange: (Int) -> Unit,
+    range: IntRange,
+    label: String
+) {
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Text(
+            text = label,
+            fontSize = 12.sp,
+            color = StudyWithBlack.copy(alpha = 0.6f)
+        )
+        
+        Spacer(modifier = Modifier.height(8.dp))
+        
+        Box(
+            modifier = Modifier
+                .size(width = 80.dp, height = 150.dp)
+                .background(Color.Gray.copy(alpha = 0.1f))
+        ) {
+            LazyColumn(
+                modifier = Modifier.fillMaxSize(),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
+            ) {
+                items(range.toList()) { number ->
+                    Text(
+                        text = String.format("%02d", number),
+                        fontSize = if (number == value) 24.sp else 18.sp,
+                        fontWeight = if (number == value) FontWeight.Bold else FontWeight.Normal,
+                        color = if (number == value) StudyWithOrange else StudyWithBlack.copy(alpha = 0.5f),
+                        modifier = Modifier
+                            .clickable { onValueChange(number) }
+                            .padding(vertical = 8.dp)
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun NumberPicker(
+    value: Int,
+    onValueChange: (Int) -> Unit,
+    range: List<Int>,
+    label: String
+) {
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Text(
+            text = label,
+            fontSize = 12.sp,
+            color = StudyWithBlack.copy(alpha = 0.6f)
+        )
+        
+        Spacer(modifier = Modifier.height(8.dp))
+        
+        Box(
+            modifier = Modifier
+                .size(width = 80.dp, height = 150.dp)
+                .background(Color.Gray.copy(alpha = 0.1f))
+        ) {
+            LazyColumn(
+                modifier = Modifier.fillMaxSize(),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
+            ) {
+                items(range) { number ->
+                    Text(
+                        text = String.format("%02d", number),
+                        fontSize = if (number == value) 24.sp else 18.sp,
+                        fontWeight = if (number == value) FontWeight.Bold else FontWeight.Normal,
+                        color = if (number == value) StudyWithOrange else StudyWithBlack.copy(alpha = 0.5f),
+                        modifier = Modifier
+                            .clickable { onValueChange(number) }
+                            .padding(vertical = 8.dp)
+                    )
                 }
             }
         }

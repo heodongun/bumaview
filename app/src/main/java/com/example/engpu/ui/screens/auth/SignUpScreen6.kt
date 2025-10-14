@@ -26,7 +26,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 
 @Composable
 fun SignUpScreen6(
-    onCompleteClick: () -> Unit,
+    onCompleteClick: (password: String, confirmPassword: String) -> Unit,
     onBackClick: () -> Unit,
     userName: String
 ) {
@@ -198,8 +198,8 @@ fun SignUpScreen6(
                     if (canProceed) {
                         StudyWithButton(
                             text = "회원가입 완료",
-                            onClick = { 
-                                showCompletionAnimation = true
+                            onClick = {
+                                onCompleteClick(password, confirmPassword)
                             },
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -222,10 +222,10 @@ fun SignUpScreen6(
                 Spacer(modifier = Modifier.height(60.dp))
             }
         } else {
-            // 완료 애니메이션 화면
+            // 완료 애니메이션 화면 - 실제로는 바로 로그인 화면으로 이동
             CompletionScreen(
                 userName = userName,
-                onLoginClick = onCompleteClick
+                onLoginClick = { /* Already called onCompleteClick in button */ }
             )
         }
         
@@ -255,7 +255,7 @@ fun SignUpScreen6(
 @Composable
 private fun CompletionScreen(
     userName: String,
-    onLoginClick: () -> Unit
+    onLoginClick: () -> Unit = {}
 ) {
     var isVisible by remember { mutableStateOf(false) }
     

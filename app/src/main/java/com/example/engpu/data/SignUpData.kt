@@ -2,19 +2,11 @@ package com.example.engpu.data
 
 data class SignUpData(
     val name: String = "",
-    val jobPosition: String = "", // 희망직무
+    val jobPosition: String = "", // 희망직무 (카테고리)
     val email: String = "",
     val verificationCode: String = "",
-    val interviewTime: String = "", // 면접 질문 시간
+    val interviewTime: String = "", // "14:30" 형식의 알림 시간
     val password: String = "",
-    val confirmPassword: String = ""
+    val confirmPassword: String = "",
+    val isEmailVerified: Boolean = false // 이메일 인증 완료 여부
 )
-
-enum class SignUpStep {
-    NAME,           // 이름 입력
-    JOB_POSITION,   // 희망직무 입력
-    EMAIL,          // 이메일 입력
-    VERIFICATION,   // 확인코드 입력
-    INTERVIEW_TIME, // 면접 질문 시간 설정
-    PASSWORD        // 비밀번호 설정
-}

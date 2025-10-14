@@ -79,7 +79,7 @@ fun HomeScreen(
                     description = "면접질문을 돌아보는것도\n괜찮은 선택이에요!",
                     backgroundColor = StudyWithLightOrange, // #FF9A62
                     onClick = { onNavigate(Screen.Repository.route) },
-                    iconEmoji = "📝" // 메모 아이콘 (질문/답변에 더 적합)
+                    showClockIcon = true
                 )
                 
                 Spacer(modifier = Modifier.height(17.dp)) // 카드 간격
@@ -152,55 +152,13 @@ private fun StatusBar() {
             color = StudyWithBlack
         )
         
-        // Status icons - 피그마 우측 상단 아이콘들
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(6.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            // 신호 강도 표시 (단순화)
-            Row(horizontalArrangement = Arrangement.spacedBy(2.dp)) {
-                repeat(4) { index ->
-                    Box(
-                        modifier = Modifier
-                            .width(3.dp)
-                            .height((6 + index * 2).dp)
-                            .background(StudyWithBlack, RoundedCornerShape(1.dp))
-                    )
-                }
-            }
-            
-            Spacer(modifier = Modifier.width(5.dp))
-            
-            // WiFi 아이콘 (단순화)
-            Text(text = "📶", fontSize = 10.sp)
-            
-            Spacer(modifier = Modifier.width(5.dp))
-            
-            // 배터리 아이콘
-            Box(
-                modifier = Modifier
-                    .width(24.dp)
-                    .height(12.dp)
-                    .background(StudyWithBlack, RoundedCornerShape(2.dp))
-            ) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxHeight()
-                        .fillMaxWidth(0.8f)
-                        .background(StudyWithBlack)
-                )
-            }
-            
-            Spacer(modifier = Modifier.width(5.dp))
-            
-            // 피그마 notification_2.png 알림 아이콘
-            Image(
-                painter = painterResource(id = R.drawable.notification_2),
-                contentDescription = "알림",
-                modifier = Modifier.size(24.dp),
-                contentScale = ContentScale.Fit
-            )
-        }
+        // 알림 아이콘만 표시
+        Image(
+            painter = painterResource(id = R.drawable.notification_2),
+            contentDescription = "알림",
+            modifier = Modifier.size(24.dp),
+            contentScale = ContentScale.Fit
+        )
     }
 }
 
@@ -252,7 +210,6 @@ private fun ActionCard(
     showMusicIcon: Boolean = false,
     showClockIcon: Boolean = false,
     showGroup28Icon: Boolean = false,
-    iconEmoji: String = "📚"
 ) {
     var isPressed by remember { mutableStateOf(false) }
     
@@ -360,7 +317,7 @@ private fun ActionCard(
                                 )
                         ) {
                             Text(
-                                text = iconEmoji,
+                                text = "iconEmoji",
                                 fontSize = 40.sp,
                                 modifier = Modifier.align(Alignment.Center)
                             )

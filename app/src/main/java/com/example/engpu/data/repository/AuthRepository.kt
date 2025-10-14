@@ -12,7 +12,7 @@ import kotlinx.coroutines.withContext
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
 
-class AuthRepository {
+class AuthRepository(private val devMode: Boolean = false) {
 
     private val emailVerificationRepository = EmailVerificationRepository()
 
@@ -21,12 +21,17 @@ class AuthRepository {
      */
     fun setContext(context: Context) {
         emailVerificationRepository.setContext(context)
-        println("✅ [AuthRepository] Context configured for hybrid email system")
+        println("✅ [AuthRepository] Context configured (DEV MODE: $devMode)")
     }
 
     // 이메일 인증 코드 전송 (Gmail SMTP 사용)
     suspend fun sendVerificationCode(email: String): Result<Boolean> = withContext(Dispatchers.IO) {
         try {
+            if (devMode) {
+                println("🔧 [DEV MODE] Skipping email verification send")
+                return@withContext Result.success(true)
+            }
+
             println("📧 [AuthRepository] Starting verification code send to: $email")
 
             // 기존 Supabase OTP 대신 커스텀 SMTP 사용
@@ -52,6 +57,11 @@ class AuthRepository {
         code: String
     ): Result<Boolean> = withContext(Dispatchers.IO) {
         try {
+            if (devMode) {
+                println("🔧 [DEV MODE] Auto-approving verification code")
+                return@withContext Result.success(true)
+            }
+
             println("🔐 [AuthRepository] Verifying code for email: $email")
 
             // 커스텀 인증 코드 검증
@@ -122,10 +132,14 @@ class AuthRepository {
         password: String
     ): Result<AuthUser> = withContext(Dispatchers.IO) {
         try {
-            // 1. 이메일 인증 여부 확인
-            val isVerified = emailVerificationRepository.isEmailVerified(email)
-            if (!isVerified) {
-                return@withContext Result.failure(Exception("이메일 인증이 필요합니다"))
+            // 1. 이메일 인증 여부 확인 (dev mode에서는 skip)
+            if (!devMode) {
+                val isVerified = emailVerificationRepository.isEmailVerified(email)
+                if (!isVerified) {
+                    return@withContext Result.failure(Exception("이메일 인증이 필요합니다"))
+                }
+            } else {
+                println("🔧 [DEV MODE] Skipping email verification check")
             }
 
             // 2. Supabase Auth 로그인

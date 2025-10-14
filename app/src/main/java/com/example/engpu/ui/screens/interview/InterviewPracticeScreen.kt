@@ -126,7 +126,7 @@ fun InterviewPracticeScreen(
             
             // Progress Bar
             LinearProgressIndicator(
-                progress = (currentQuestionIndex + 1).toFloat() / questions.size,
+                progress = { (currentQuestionIndex + 1).toFloat() / questions.size },
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(4.dp),

@@ -90,7 +90,7 @@ fun ProfileScreen(
                         Spacer(modifier = Modifier.height(15.dp))
                         
                         Text(
-                            text = "김정훈과 허동운\n커피 사주세요. 후원하기",
+                            text = "허동운에게\n커피 사주세요. 후원하기",
                             fontSize = 14.sp,
                             fontWeight = FontWeight.Normal,
                             color = StudyWithBlack,
@@ -222,12 +222,6 @@ private fun ProfileHeader(
                     fontWeight = FontWeight.SemiBold,
                     color = StudyWithBlack
                 )
-                
-                Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                    Text(text = "📶", fontSize = 10.sp)
-                    Text(text = "📶", fontSize = 10.sp)
-                    Text(text = "🔋", fontSize = 10.sp)
-                }
             }
             
             Spacer(modifier = Modifier.height(20.dp)) // y: 64 - 44 = 20

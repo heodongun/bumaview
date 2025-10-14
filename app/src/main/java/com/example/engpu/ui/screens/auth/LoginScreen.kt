@@ -11,14 +11,18 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.engpu.data.repository.AuthRepository
 import com.example.engpu.ui.components.StudyWithButton
 import com.example.engpu.ui.components.StudyWithInactiveButton
 import com.example.engpu.ui.components.StudyWithTextField
 import com.example.engpu.ui.theme.*
+import kotlinx.coroutines.launch
+import android.widget.Toast
 
 @Composable
 fun LoginScreen(
@@ -31,7 +35,12 @@ fun LoginScreen(
     var password by remember { mutableStateOf("") }
     var isLoading by remember { mutableStateOf(false) }
     var showErrorMessage by remember { mutableStateOf(false) }
+    var errorMessage by remember { mutableStateOf("") }
     var isVisible by remember { mutableStateOf(false) }
+    
+    val context = LocalContext.current
+    val coroutineScope = rememberCoroutineScope()
+    val authRepository = remember { AuthRepository() }
     
     LaunchedEffect(Unit) {
         isVisible = true
@@ -179,7 +188,7 @@ fun LoginScreen(
                 Column {
                     Spacer(modifier = Modifier.height(16.dp))
                     Text(
-                        text = "이메일 또는 비밀번호가 올바르지 않습니다.",
+                        text = errorMessage,
                         fontSize = 12.sp,
                         color = androidx.compose.ui.graphics.Color.Red
                     )
@@ -201,13 +210,27 @@ fun LoginScreen(
                         StudyWithButton(
                             text = "로그인",
                             onClick = { 
-                                isLoading = true
-                                // Simulate login process
-                                if (email.contains("@") && password.length >= 6) {
-                                    onLoginClick()
-                                } else {
-                                    isLoading = false
-                                    showErrorMessage = true
+                                coroutineScope.launch {
+                                    isLoading = true
+                                    showErrorMessage = false
+                                    
+                                    authRepository.signIn(email, password)
+                                        .onSuccess {
+                                            Toast.makeText(context, "로그인 성공!", Toast.LENGTH_SHORT).show()
+                                            onLoginClick()
+                                        }
+                                        .onFailure { exception ->
+                                            errorMessage = when {
+                                                exception.message?.contains("Invalid") == true -> 
+                                                    "이메일 또는 비밀번호가 올바르지 않습니다."
+                                                exception.message?.contains("Network") == true -> 
+                                                    "네트워크 연결을 확인해주세요."
+                                                else -> 
+                                                    "로그인 중 오류가 발생했습니다."
+                                            }
+                                            showErrorMessage = true
+                                            isLoading = false
+                                        }
                                 }
                             },
                             modifier = Modifier
