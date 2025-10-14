@@ -23,25 +23,38 @@ import com.example.engpu.ui.components.StudyWithButton
 import com.example.engpu.ui.theme.*
 import kotlinx.coroutines.delay
 
+// Data class to hold interview answers
+data class InterviewAnswer(
+    val questionId: String,
+    val question: String,
+    val answer: String
+)
+
 @Composable
 fun InterviewPracticeScreen(
+    questions: List<com.example.engpu.data.supabase.Question>,
     onBackClick: () -> Unit,
-    onCompleteInterview: () -> Unit
+    onCompleteInterview: (List<InterviewAnswer>) -> Unit,
+    onSaveAnswer: (questionId: String, answer: String) -> Unit
 ) {
-    var currentQuestion by remember { mutableStateOf(0) }
+    var currentQuestionIndex by remember { mutableStateOf(0) }
     var isRecording by remember { mutableStateOf(false) }
     var recordingTime by remember { mutableStateOf(0) }
     var showQuestion by remember { mutableStateOf(false) }
     var isInterviewStarted by remember { mutableStateOf(false) }
     var shouldAnimateQuestion by remember { mutableStateOf(false) }
-    
-    val questions = listOf(
-        "자기소개를 간단히 해주세요.",
-        "이 회사에 지원한 이유는 무엇인가요?",
-        "본인의 장점과 단점은 무엇인가요?",
-        "5년 후의 목표는 무엇인가요?",
-        "마지막으로 하고 싶은 말이 있나요?"
-    )
+    var currentAnswer by remember { mutableStateOf("") }
+    var answers by remember { mutableStateOf<Map<String, String>>(emptyMap()) }
+
+    if (questions.isEmpty()) {
+        Box(
+            modifier = Modifier.fillMaxSize(),
+            contentAlignment = Alignment.Center
+        ) {
+            Text("면접 질문이 없습니다", color = StudyWithBlack)
+        }
+        return
+    }
     
     // Recording timer
     LaunchedEffect(isRecording) {
@@ -100,7 +113,7 @@ fun InterviewPracticeScreen(
                 }
                 
                 Text(
-                    text = "모의면접 ${currentQuestion + 1}/${questions.size}",
+                    text = "모의면접 ${currentQuestionIndex + 1}/${questions.size}",
                     fontSize = 18.sp,
                     fontWeight = FontWeight.SemiBold,
                     color = StudyWithBlack
@@ -113,7 +126,7 @@ fun InterviewPracticeScreen(
             
             // Progress Bar
             LinearProgressIndicator(
-                progress = (currentQuestion + 1).toFloat() / questions.size,
+                progress = (currentQuestionIndex + 1).toFloat() / questions.size,
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(4.dp),
@@ -148,7 +161,7 @@ fun InterviewPracticeScreen(
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
-                            text = questions[currentQuestion],
+                            text = questions[currentQuestionIndex].question,
                             fontSize = 20.sp,
                             fontWeight = FontWeight.SemiBold,
                             color = StudyWithBlack,
@@ -159,8 +172,25 @@ fun InterviewPracticeScreen(
                 }
             }
             
-            Spacer(modifier = Modifier.height(40.dp))
-            
+            Spacer(modifier = Modifier.height(20.dp))
+
+            // Answer input field
+            OutlinedTextField(
+                value = currentAnswer,
+                onValueChange = { currentAnswer = it },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(120.dp),
+                label = { Text("답변을 입력하세요") },
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor = StudyWithYellow,
+                    unfocusedBorderColor = StudyWithGray
+                ),
+                maxLines = 5
+            )
+
+            Spacer(modifier = Modifier.height(20.dp))
+
             // Recording Status
             if (isRecording) {
                 Row(
@@ -234,12 +264,25 @@ fun InterviewPracticeScreen(
                 
                 // Next/Complete Button
                 StudyWithButton(
-                    text = if (currentQuestion == questions.size - 1) "면접 완료" else "다음 질문",
+                    text = if (currentQuestionIndex == questions.size - 1) "면접 완료" else "다음 질문",
                     onClick = {
-                        if (currentQuestion == questions.size - 1) {
-                            onCompleteInterview()
+                        // Save current answer
+                        val currentQ = questions[currentQuestionIndex]
+                        if (currentAnswer.isNotBlank()) {
+                            answers = answers + (currentQ.id to currentAnswer)
+                            onSaveAnswer(currentQ.id, currentAnswer)
+                        }
+
+                        if (currentQuestionIndex == questions.size - 1) {
+                            // Complete interview and return all answers
+                            val allAnswers = answers.map { (qId, ans) ->
+                                val q = questions.find { it.id == qId }
+                                InterviewAnswer(qId, q?.question ?: "", ans)
+                            }
+                            onCompleteInterview(allAnswers)
                         } else {
-                            currentQuestion += 1
+                            currentQuestionIndex += 1
+                            currentAnswer = answers[questions[currentQuestionIndex].id] ?: ""
                             shouldAnimateQuestion = true
                             isRecording = false
                         }
@@ -249,7 +292,7 @@ fun InterviewPracticeScreen(
                         .height(55.dp),
                     backgroundColor = StudyWithBlack,
                     textColor = StudyWithYellow,
-                    enabled = isInterviewStarted
+                    enabled = currentAnswer.isNotBlank() || answers.isNotEmpty()
                 )
             }
             

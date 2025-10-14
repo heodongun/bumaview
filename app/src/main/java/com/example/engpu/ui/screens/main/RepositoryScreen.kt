@@ -12,6 +12,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.Upload
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -43,6 +44,7 @@ fun RepositoryScreen(
     var searchCategory by remember { mutableStateOf("") }
     var selectedQuestion by remember { mutableStateOf<InterviewQuestion?>(null) }
     var isExpanded by remember { mutableStateOf(false) }
+    var showUploadDialog by remember { mutableStateOf(false) }
     
     // 샘플 데이터 - 피그마 디자인의 Economics, 마이다스, Level 2 등
     val questions = remember {
@@ -77,7 +79,8 @@ fun RepositoryScreen(
                 searchCategory = searchCategory,
                 onSearchCategoryChange = { searchCategory = it },
                 isExpanded = isExpanded,
-                onExpandToggle = { isExpanded = !isExpanded }
+                onExpandToggle = { isExpanded = !isExpanded },
+                onUploadClick = { showUploadDialog = true }
             )
             
             // Questions List - 피그마 리스트 디자인 매칭
@@ -129,6 +132,17 @@ fun RepositoryScreen(
                 onDismiss = { selectedQuestion = null }
             )
         }
+
+        // Excel Upload Dialog
+        if (showUploadDialog) {
+            ExcelUploadDialog(
+                onDismiss = { showUploadDialog = false },
+                onFileSelected = { uri ->
+                    // TODO: Connect to ViewModel
+                    println("File selected: $uri")
+                }
+            )
+        }
     }
 }
 
@@ -139,7 +153,8 @@ private fun RepositoryHeader(
     searchCategory: String,
     onSearchCategoryChange: (String) -> Unit,
     isExpanded: Boolean,
-    onExpandToggle: () -> Unit
+    onExpandToggle: () -> Unit,
+    onUploadClick: () -> Unit
 ) {
     Card(
         modifier = Modifier
@@ -157,11 +172,11 @@ private fun RepositoryHeader(
             // Status Bar
             StatusBar()
             
-            // Back Button - 피그마 위치 (x: 17, y: 44)
-            Box(
-                modifier = Modifier
-                    .padding(top = 44.dp - 44.dp) // 이미 status bar에서 조정됨
-                    .offset(x = (-6).dp) // x: 17 - 23 = -6
+            // Back Button and Upload Button Row
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
             ) {
                 IconButton(
                     onClick = { /* 뒤로가기 */ },
@@ -171,6 +186,18 @@ private fun RepositoryHeader(
                         imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                         contentDescription = "뒤로가기",
                         tint = StudyWithBlack
+                    )
+                }
+
+                // Upload Button
+                IconButton(
+                    onClick = onUploadClick,
+                    modifier = Modifier.size(42.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Upload,
+                        contentDescription = "Excel 업로드",
+                        tint = StudyWithYellow
                     )
                 }
             }
@@ -277,11 +304,7 @@ private fun StatusBar() {
             color = StudyWithBlack
         )
         
-        Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-            Text(text = "📶", fontSize = 10.sp)
-            Text(text = "📶", fontSize = 10.sp)
-            Text(text = "🔋", fontSize = 10.sp)
-        }
+        // 상태바 아이콘들 모두 제거
     }
 }
 
@@ -322,10 +345,7 @@ private fun QuestionItem(
                 ),
             contentAlignment = Alignment.Center
         ) {
-            Text(
-                text = "🎓",
-                fontSize = 16.sp
-            )
+            // 아이콘 제거됨
         }
         
         Spacer(modifier = Modifier.width(10.dp))
