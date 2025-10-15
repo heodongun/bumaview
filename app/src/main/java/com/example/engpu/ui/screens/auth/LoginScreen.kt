@@ -16,31 +16,30 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.engpu.data.repository.AuthRepository
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.example.engpu.viewmodel.AppViewModel
 import com.example.engpu.ui.components.StudyWithButton
 import com.example.engpu.ui.components.StudyWithInactiveButton
 import com.example.engpu.ui.components.StudyWithTextField
 import com.example.engpu.ui.theme.*
-import kotlinx.coroutines.launch
 import android.widget.Toast
 
 @Composable
 fun LoginScreen(
-    onLoginClick: () -> Unit,
+    appViewModel: AppViewModel,
+    onLoginSuccess: () -> Unit,
     onSignUpClick: () -> Unit,
     onForgotPasswordClick: () -> Unit,
     onBackClick: () -> Unit
 ) {
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
-    var isLoading by remember { mutableStateOf(false) }
     var showErrorMessage by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf("") }
     var isVisible by remember { mutableStateOf(false) }
-    
+
     val context = LocalContext.current
-    val coroutineScope = rememberCoroutineScope()
-    val authRepository = remember { AuthRepository() }
+    val uiState by appViewModel.uiState.collectAsStateWithLifecycle()
     
     LaunchedEffect(Unit) {
         isVisible = true
@@ -206,32 +205,27 @@ fun LoginScreen(
                 ) + fadeIn(animationSpec = tween(700, delayMillis = 800))
             ) {
                 when {
-                    email.isNotBlank() && password.isNotBlank() && !isLoading -> {
+                    email.isNotBlank() && password.isNotBlank() && !uiState.isLoading -> {
                         StudyWithButton(
                             text = "로그인",
-                            onClick = { 
-                                coroutineScope.launch {
-                                    isLoading = true
-                                    showErrorMessage = false
-                                    
-                                    authRepository.signIn(email, password)
-                                        .onSuccess {
-                                            Toast.makeText(context, "로그인 성공!", Toast.LENGTH_SHORT).show()
-                                            onLoginClick()
+                            onClick = {
+                                showErrorMessage = false
+                                appViewModel.signIn(
+                                    email = email,
+                                    password = password,
+                                    onSuccess = {
+                                        Toast.makeText(context, "로그인 성공!", Toast.LENGTH_SHORT).show()
+                                        onLoginSuccess()
+                                    },
+                                    onError = { error ->
+                                        errorMessage = when {
+                                            error.contains("Invalid") -> "이메일 또는 비밀번호가 올바르지 않습니다."
+                                            error.contains("Network") -> "네트워크 연결을 확인해주세요."
+                                            else -> "로그인 중 오류가 발생했습니다."
                                         }
-                                        .onFailure { exception ->
-                                            errorMessage = when {
-                                                exception.message?.contains("Invalid") == true -> 
-                                                    "이메일 또는 비밀번호가 올바르지 않습니다."
-                                                exception.message?.contains("Network") == true -> 
-                                                    "네트워크 연결을 확인해주세요."
-                                                else -> 
-                                                    "로그인 중 오류가 발생했습니다."
-                                            }
-                                            showErrorMessage = true
-                                            isLoading = false
-                                        }
-                                }
+                                        showErrorMessage = true
+                                    }
+                                )
                             },
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -240,7 +234,7 @@ fun LoginScreen(
                             textColor = StudyWithOrange
                         )
                     }
-                    isLoading -> {
+                    uiState.isLoading -> {
                         StudyWithButton(
                             text = "로그인 중...",
                             onClick = { },

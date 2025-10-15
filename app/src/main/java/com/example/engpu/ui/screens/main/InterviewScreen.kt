@@ -21,7 +21,9 @@ import com.example.engpu.ui.theme.*
 @Composable
 fun InterviewScreen(
     currentRoute: String,
-    onNavigate: (String) -> Unit
+    onNavigate: (String) -> Unit,
+    onStartInterviewSetup: () -> Unit,
+    isLoading: Boolean = false
 ) {
     var isVisible by remember { mutableStateOf(false) }
     
@@ -179,16 +181,14 @@ fun InterviewScreen(
                     ) + fadeIn(animationSpec = tween(700, delayMillis = 800))
                 ) {
                     StudyWithButton(
-                        text = "모의면접 시작하기",
-                        onClick = { 
-                            // 모의면접 시작 로직
-                            // 추후 구현
-                        },
+                        text = if (isLoading) "질문 준비 중..." else "모의면접 시작하기",
+                        onClick = onStartInterviewSetup,
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(55.dp),
                         backgroundColor = StudyWithBlack,
-                        textColor = StudyWithYellow
+                        textColor = StudyWithYellow,
+                        enabled = !isLoading
                     )
                 }
                 

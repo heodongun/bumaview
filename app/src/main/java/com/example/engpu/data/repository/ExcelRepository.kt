@@ -50,6 +50,8 @@ class ExcelRepository(private val context: Context) {
 
             questions.forEachIndexed { index, question ->
                 try {
+                    println("📝 [Excel] Processing row ${index + 2}: question='${question.question}', category='${question.category}', company='${question.company}', year=${question.question_at}")
+
                     // UPSERT 로직: 동일한 question이 있으면 업데이트, 없으면 추가
                     val result = interviewRepository.addQuestion(
                         question = question.question,
@@ -60,14 +62,25 @@ class ExcelRepository(private val context: Context) {
 
                     if (result.isSuccess) {
                         successCount++
+                        println("✅ [Excel] Row ${index + 2} inserted successfully")
                     } else {
                         failureCount++
-                        errors.add("Row ${index + 2}: ${result.exceptionOrNull()?.message}")
+                        val error = result.exceptionOrNull()?.message ?: "Unknown error"
+                        errors.add("Row ${index + 2}: $error")
+                        println("❌ [Excel] Row ${index + 2} failed: $error")
                     }
                 } catch (e: Exception) {
                     failureCount++
                     errors.add("Row ${index + 2}: ${e.message}")
+                    println("❌ [Excel] Row ${index + 2} exception: ${e.message}")
+                    e.printStackTrace()
                 }
+            }
+
+            println("📊 [Excel] Upload complete: $successCount success, $failureCount failed out of ${questions.size} total")
+            if (errors.isNotEmpty()) {
+                println("🔍 [Excel] First 5 errors:")
+                errors.take(5).forEach { println("  - $it") }
             }
 
             Result.success(
@@ -103,8 +116,10 @@ class ExcelRepository(private val context: Context) {
             val headerRow = sheet.getRow(0) ?: return emptyList()
             val columnIndices = mapHeaderColumns(headerRow)
 
-            if (columnIndices.isEmpty()) {
-                throw Exception("필수 컬럼(question)을 찾을 수 없습니다")
+            println("📋 [Excel] Header mapping: $columnIndices")
+
+            if (columnIndices["question"] == null) {
+                throw Exception("필수 컬럼(question)을 찾을 수 없습니다. 발견된 컬럼: ${columnIndices.keys}")
             }
 
             // 데이터 행 읽기 (2번째 행부터)
@@ -112,26 +127,58 @@ class ExcelRepository(private val context: Context) {
                 val row = sheet.getRow(rowIndex) ?: continue
 
                 // question 컬럼은 필수
-                val questionText = row.getCell(columnIndices["question"] ?: 0)
-                    ?.stringCellValue
-                    ?.trim()
+                val questionColIndex = columnIndices["question"] ?: 0
+                var questionText = getCellValueAsString(row.getCell(questionColIndex))?.trim()
 
-                if (questionText.isNullOrBlank()) continue
+                // question이 비어있거나 숫자만 있는 경우 스킵
+                if (questionText.isNullOrBlank()) {
+                    println("⏭️ [Excel] Row ${rowIndex + 1} skipped: empty question")
+                    continue
+                }
+
+                // question이 4자리 숫자만 있는 경우 (연도일 가능성) 스킵
+                if (questionText.matches(Regex("^\\d{4}$"))) {
+                    println("⏭️ [Excel] Row ${rowIndex + 1} skipped: question is year-like '$questionText'")
+                    continue
+                }
+
+                // question이 너무 짧으면 (3자 이하) 스킵
+                if (questionText.length <= 3) {
+                    println("⏭️ [Excel] Row ${rowIndex + 1} skipped: question too short '$questionText'")
+                    continue
+                }
+
+                // question 텍스트에서 연도 제거 (끝에 2000-2099 범위의 4자리 숫자)
+                questionText = questionText.replace(Regex("\\s*20\\d{2}\\s*$"), "").trim()
 
                 // 선택적 컬럼들
                 val category = columnIndices["category"]?.let {
-                    row.getCell(it)?.stringCellValue?.trim()
-                }
+                    getCellValueAsString(row.getCell(it))?.trim()
+                }?.takeIf { it.isNotBlank() && it.length > 1 }
 
                 val company = columnIndices["company"]?.let {
-                    row.getCell(it)?.stringCellValue?.trim()
-                }
+                    getCellValueAsString(row.getCell(it))?.trim()
+                }?.takeIf { it.isNotBlank() && it.length > 1 }
 
                 val questionAt = columnIndices["question_at"]?.let { colIndex ->
+                    val cell = row.getCell(colIndex)
                     try {
-                        row.getCell(colIndex)?.numericCellValue?.toInt()
+                        when (cell?.cellType) {
+                            org.apache.poi.ss.usermodel.CellType.NUMERIC -> cell.numericCellValue.toInt()
+                            org.apache.poi.ss.usermodel.CellType.STRING -> cell.stringCellValue.trim().toIntOrNull()
+                            else -> null
+                        }
                     } catch (e: Exception) {
                         null
+                    }
+                }
+
+                // 디버그: 각 행의 실제 셀 값 출력 (처음 5개만)
+                if (rowIndex <= 5) {
+                    println("🔍 [Excel] Row ${rowIndex + 1} raw data:")
+                    for (cellIndex in 0 until row.lastCellNum.coerceAtMost(4)) {
+                        val cellValue = getCellValueAsString(row.getCell(cellIndex))
+                        println("   Cell[$cellIndex] = '$cellValue'")
                     }
                 }
 
@@ -154,6 +201,49 @@ class ExcelRepository(private val context: Context) {
     }
 
     /**
+     * Cell 값을 안전하게 String으로 변환
+     * NUMERIC, STRING, BOOLEAN, FORMULA 타입 모두 처리
+     */
+    private fun getCellValueAsString(cell: org.apache.poi.ss.usermodel.Cell?): String? {
+        if (cell == null) return null
+
+        return try {
+            when (cell.cellType) {
+                org.apache.poi.ss.usermodel.CellType.STRING -> cell.stringCellValue
+                org.apache.poi.ss.usermodel.CellType.NUMERIC -> {
+                    // 날짜인지 확인
+                    if (org.apache.poi.ss.usermodel.DateUtil.isCellDateFormatted(cell)) {
+                        cell.dateCellValue.toString()
+                    } else {
+                        // 정수면 정수로, 소수면 소수로
+                        val numValue = cell.numericCellValue
+                        if (numValue % 1.0 == 0.0) {
+                            numValue.toInt().toString()
+                        } else {
+                            numValue.toString()
+                        }
+                    }
+                }
+                org.apache.poi.ss.usermodel.CellType.BOOLEAN -> cell.booleanCellValue.toString()
+                org.apache.poi.ss.usermodel.CellType.FORMULA -> {
+                    try {
+                        cell.stringCellValue
+                    } catch (e: Exception) {
+                        try {
+                            cell.numericCellValue.toString()
+                        } catch (e2: Exception) {
+                            null
+                        }
+                    }
+                }
+                else -> null
+            }
+        } catch (e: Exception) {
+            null
+        }
+    }
+
+    /**
      * 헤더 행에서 컬럼 인덱스 매핑
      *
      * @param headerRow 헤더 행
@@ -164,17 +254,31 @@ class ExcelRepository(private val context: Context) {
 
         for (cellIndex in 0 until headerRow.lastCellNum) {
             val cell = headerRow.getCell(cellIndex) ?: continue
-            val headerName = cell.stringCellValue.trim().lowercase()
+            val headerName = getCellValueAsString(cell)?.trim()?.lowercase() ?: continue
+
+            println("📝 [Excel] Column $cellIndex: '$headerName'")
 
             when {
-                headerName.contains("question") || headerName.contains("질문") ->
+                // question 컬럼 - 정확한 매칭 우선
+                headerName == "question" || headerName == "질문" -> {
                     columnMap["question"] = cellIndex
-                headerName.contains("category") || headerName.contains("카테고리") || headerName.contains("분류") ->
+                    println("✅ [Excel] Mapped 'question' to column $cellIndex")
+                }
+                // category 컬럼
+                headerName == "category" || headerName == "카테고리" || headerName == "분류" -> {
                     columnMap["category"] = cellIndex
-                headerName.contains("company") || headerName.contains("회사") || headerName.contains("기업") ->
+                    println("✅ [Excel] Mapped 'category' to column $cellIndex")
+                }
+                // company 컬럼
+                headerName == "company" || headerName == "회사" || headerName == "기업" -> {
                     columnMap["company"] = cellIndex
-                headerName.contains("question_at") || headerName.contains("출제") || headerName.contains("연도") ->
+                    println("✅ [Excel] Mapped 'company' to column $cellIndex")
+                }
+                // question_at 컬럼
+                headerName == "question_at" || headerName == "출제" || headerName == "연도" || headerName == "year" -> {
                     columnMap["question_at"] = cellIndex
+                    println("✅ [Excel] Mapped 'question_at' to column $cellIndex")
+                }
             }
         }
 

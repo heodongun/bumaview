@@ -13,3 +13,30 @@
 .externalNativeBuild
 .cxx
 local.properties
+
+# Environment variables - DO NOT COMMIT
+.env
+*.env
+!.env.example
+
+# API Keys and Secrets
+secrets/
+*.key
+*.pem
+
+# Build outputs
+app/build/
+build/
+
+# IDE
+.vscode/
+.idea/
+*.iml
+
+# macOS
+.DS_Store
+
+# Temporary files
+*.swp
+*.swo
+*~

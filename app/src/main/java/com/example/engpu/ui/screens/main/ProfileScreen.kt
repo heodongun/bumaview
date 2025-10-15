@@ -26,6 +26,8 @@ fun ProfileScreen(
     onNavigate: (String) -> Unit,
     userName: String,
     userEmail: String,
+    userGrade: String = "USER",
+    userCategory: String = "",
     onLogout: () -> Unit
 ) {
     var isVisible by remember { mutableStateOf(false) }
@@ -44,6 +46,8 @@ fun ProfileScreen(
             ProfileHeader(
                 userName = userName,
                 userEmail = userEmail,
+                userGrade = userGrade,
+                userCategory = userCategory,
                 isVisible = isVisible
             )
             
@@ -194,6 +198,8 @@ fun ProfileScreen(
 private fun ProfileHeader(
     userName: String,
     userEmail: String,
+    userGrade: String,
+    userCategory: String,
     isVisible: Boolean
 ) {
     Card(
@@ -291,9 +297,9 @@ private fun ProfileHeader(
                 )
             }
             
-            Spacer(modifier = Modifier.height(2.dp)) // y: 173 - 157 - 14 = 2
-            
-            // VIP Badge - 피그마 위치 (x: 88, y: 173)
+            Spacer(modifier = Modifier.height(6.dp))
+
+            // User Category & Grade - 피그마 위치 (x: 88, y: 173)
             AnimatedVisibility(
                 visible = isVisible,
                 enter = slideInVertically(
@@ -301,13 +307,40 @@ private fun ProfileHeader(
                     animationSpec = tween(700, delayMillis = 600)
                 ) + fadeIn(animationSpec = tween(700, delayMillis = 600))
             ) {
-                Text(
-                    text = "VIP",
-                    fontSize = 14.sp,
-                    fontWeight = FontWeight.SemiBold, // 피그마 weight: 600
-                    color = StudyWithBlack,
-                    textAlign = TextAlign.Center
-                )
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    if (userCategory.isNotEmpty()) {
+                        Card(
+                            colors = CardDefaults.cardColors(containerColor = StudyWithBlack),
+                            shape = RoundedCornerShape(6.dp)
+                        ) {
+                            Text(
+                                text = userCategory,
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Medium,
+                                color = StudyWithYellow,
+                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
+                            )
+                        }
+                    }
+
+                    Card(
+                        colors = CardDefaults.cardColors(
+                            containerColor = if (userGrade == "VIP") StudyWithYellow else Color(0xFFE0E0E0)
+                        ),
+                        shape = RoundedCornerShape(6.dp)
+                    ) {
+                        Text(
+                            text = userGrade,
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Medium,
+                            color = if (userGrade == "VIP") StudyWithBlack else StudyWithGray,
+                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
+                        )
+                    }
+                }
             }
         }
     }

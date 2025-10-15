@@ -19,8 +19,9 @@ sealed class Screen(val route: String) {
     object Profile : Screen("profile")
     
     // Additional Screens
+    object InterviewSetup : Screen("interview_setup")
     object InterviewPractice : Screen("interview_practice")
     object InterviewResult : Screen("interview_result")
-    object InterviewSaved : Screen("interview_saved")
+    object InterviewHistory : Screen("interview_history")
     object QuestionRepository : Screen("question_repository")
 }

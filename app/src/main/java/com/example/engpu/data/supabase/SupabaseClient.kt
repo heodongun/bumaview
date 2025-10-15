@@ -1,5 +1,6 @@
 package com.example.engpu.data.supabase
 
+import com.example.engpu.BuildConfig
 import io.github.jan.supabase.createSupabaseClient
 import io.github.jan.supabase.gotrue.Auth
 import io.github.jan.supabase.postgrest.Postgrest
@@ -7,10 +8,10 @@ import io.github.jan.supabase.realtime.Realtime
 import kotlinx.serialization.Serializable
 import java.util.UUID
 
-// Supabase Client 인스턴스
+// Supabase Client 인스턴스 - BuildConfig에서 환경변수 로드
 val supabase = createSupabaseClient(
-    supabaseUrl = "https://danfonxiwappznsvoiik.supabase.co",
-    supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRhbmZvbnhpd2FwcHpuc3ZvaWlrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg1MzUzMjUsImV4cCI6MjA3NDExMTMyNX0.RmpkDPfCQq3qOHxG8fRuHY8gkUUxXgeeCOWGHFq7SDc"
+    supabaseUrl = BuildConfig.SUPABASE_URL,
+    supabaseKey = BuildConfig.SUPABASE_ANON_KEY
 ) {
     install(Auth)
     install(Postgrest)

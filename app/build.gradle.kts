@@ -5,6 +5,19 @@ plugins {
     kotlin("plugin.serialization") version "1.9.20"
 }
 
+import java.util.Properties
+
+// Load .env file
+val envFile = rootProject.file(".env")
+val envProperties = Properties()
+if (envFile.exists()) {
+    envFile.inputStream().use { envProperties.load(it) }
+}
+
+fun getEnvProperty(key: String, defaultValue: String = ""): String {
+    return envProperties.getProperty(key) ?: System.getenv(key) ?: defaultValue
+}
+
 android {
     namespace = "com.example.engpu"
     compileSdk = 36
@@ -17,6 +30,11 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+        // Add BuildConfig fields from .env
+        buildConfigField("String", "SUPABASE_URL", "\"${getEnvProperty("SUPABASE_URL")}\"")
+        buildConfigField("String", "SUPABASE_ANON_KEY", "\"${getEnvProperty("SUPABASE_ANON_KEY")}\"")
+        buildConfigField("String", "OPENAI_API_KEY", "\"${getEnvProperty("OPENAI_API_KEY")}\"")
     }
 
     buildTypes {
@@ -37,6 +55,7 @@ android {
     }
     buildFeatures {
         compose = true
+        buildConfig = true
     }
 
     packaging {

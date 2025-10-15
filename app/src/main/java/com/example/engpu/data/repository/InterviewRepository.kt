@@ -51,6 +51,24 @@ class InterviewRepository {
             Result.failure(e)
         }
     }
+
+    // 모든 카테고리 목록 가져오기
+    suspend fun getAllCategories(): Result<List<String>> = withContext(Dispatchers.IO) {
+        try {
+            val questions = supabase.from("Question")
+                .select()
+                .decodeList<Question>()
+            
+            val categories = questions
+                .mapNotNull { it.category }
+                .distinct()
+                .sorted()
+            
+            Result.success(categories)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
     
     // 질문 추가
     suspend fun addQuestion(
@@ -66,11 +84,14 @@ class InterviewRepository {
                 company = company,
                 question_at = questionAt
             )
-            
+
+            // Insert with select() to get the inserted data back
             val result = supabase.from("Question")
-                .insert(newQuestion)
+                .insert(newQuestion) {
+                    select()
+                }
                 .decodeSingle<Question>()
-            
+
             Result.success(result)
         } catch (e: Exception) {
             Result.failure(e)

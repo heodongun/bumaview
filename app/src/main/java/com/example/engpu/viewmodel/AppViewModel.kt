@@ -26,6 +26,8 @@ data class AppUiState(
     val currentUser: User? = null,
     val isLoading: Boolean = false,
     val questions: List<Question> = emptyList(),
+    val categories: List<String> = emptyList(),
+    val selectedInterviewQuestions: List<Question> = emptyList(),
     val interviews: List<Interview> = emptyList(),
     val interviewResults: List<InterviewResult> = emptyList(),
     val uploadResult: UploadResult? = null,
@@ -183,6 +185,7 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
             authRepository.signIn(email, password)
                 .onSuccess { authUser ->
                     val user = authRepository.getCurrentUser()
+                    println("✅ [AppViewModel] User signed in: ${user?.name} (${user?.email})")
                     _uiState.value = _uiState.value.copy(
                         isLoggedIn = true,
                         currentUser = user,
@@ -190,6 +193,7 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
                         error = null
                     )
                     if (user != null) {
+                        println("📥 [AppViewModel] Loading user data for: ${user.id}")
                         loadUserData(user.id)
                     }
                     onSuccess()
@@ -252,17 +256,84 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
     
     private fun loadUserData(userId: String) {
         viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(isLoading = true)
+
             // Load questions
             interviewRepository.getAllQuestions()
                 .onSuccess { questions ->
-                    _uiState.value = _uiState.value.copy(questions = questions)
+                    println("✅ [AppViewModel] Loaded ${questions.size} questions from database")
+                    _uiState.value = _uiState.value.copy(
+                        questions = questions,
+                        isLoading = false
+                    )
                 }
-            
+                .onFailure { e ->
+                    println("❌ [AppViewModel] Failed to load questions: ${e.message}")
+                    _uiState.value = _uiState.value.copy(isLoading = false)
+                }
+
             // Load user's interviews
             interviewRepository.getUserInterviews(userId)
                 .onSuccess { interviews ->
+                    println("✅ [AppViewModel] Loaded ${interviews.size} interviews")
                     _uiState.value = _uiState.value.copy(interviews = interviews)
                 }
+                .onFailure { e ->
+                    println("❌ [AppViewModel] Failed to load interviews: ${e.message}")
+                }
+        }
+    }
+
+    /**
+     * Select random questions for mock interview
+     */
+    fun startRandomInterview(
+        questionCount: Int = 5,
+        onSuccess: () -> Unit,
+        onError: (String) -> Unit
+    ) {
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(isLoading = true)
+
+            try {
+                val allQuestions = _uiState.value.questions
+
+                if (allQuestions.isEmpty()) {
+                    // Try loading questions first
+                    val result = interviewRepository.getAllQuestions()
+                    if (result.isFailure) {
+                        _uiState.value = _uiState.value.copy(isLoading = false)
+                        onError("질문을 불러올 수 없습니다. 인터넷 연결을 확인해주세요.")
+                        return@launch
+                    }
+
+                    val loadedQuestions = result.getOrNull() ?: emptyList()
+                    if (loadedQuestions.isEmpty()) {
+                        _uiState.value = _uiState.value.copy(isLoading = false)
+                        onError("저장된 질문이 없습니다. 질문을 먼저 추가해주세요.")
+                        return@launch
+                    }
+
+                    // Select random questions
+                    val selectedQuestions = loadedQuestions.shuffled().take(questionCount)
+                    _uiState.value = _uiState.value.copy(
+                        questions = selectedQuestions,
+                        isLoading = false
+                    )
+                    onSuccess()
+                } else {
+                    // Select random questions from existing list
+                    val selectedQuestions = allQuestions.shuffled().take(questionCount)
+                    _uiState.value = _uiState.value.copy(
+                        questions = selectedQuestions,
+                        isLoading = false
+                    )
+                    onSuccess()
+                }
+            } catch (e: Exception) {
+                _uiState.value = _uiState.value.copy(isLoading = false)
+                onError(e.message ?: "면접 시작 중 오류가 발생했습니다")
+            }
         }
     }
     
@@ -277,6 +348,93 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
                         error = exception.message
                     )
                 }
+        }
+    }
+
+    /**
+     * Load all questions from database
+     * Can be called independently without user login
+     */
+    fun loadAllQuestions() {
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(isLoading = true)
+            
+            interviewRepository.getAllQuestions()
+                .onSuccess { questions ->
+                    println("✅ [AppViewModel] Loaded ${questions.size} questions from database")
+                    _uiState.value = _uiState.value.copy(
+                        questions = questions,
+                        isLoading = false
+                    )
+                }
+                .onFailure { exception ->
+                    println("❌ [AppViewModel] Failed to load questions: ${exception.message}")
+                    _uiState.value = _uiState.value.copy(
+                        isLoading = false,
+                        error = exception.message
+                    )
+                }
+        }
+    }
+
+    /**
+     * Load all available categories from database
+     */
+    fun loadAllCategories() {
+        viewModelScope.launch {
+            interviewRepository.getAllCategories()
+                .onSuccess { categories ->
+                    println("✅ [AppViewModel] Loaded ${categories.size} categories from database")
+                    _uiState.value = _uiState.value.copy(categories = categories)
+                }
+                .onFailure { exception ->
+                    println("❌ [AppViewModel] Failed to load categories: ${exception.message}")
+                }
+        }
+    }
+
+    /**
+     * Start interview with specific settings
+     */
+    fun startInterviewWithSettings(
+        questionCount: Int,
+        category: String?,
+        onSuccess: () -> Unit,
+        onError: (String) -> Unit
+    ) {
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(isLoading = true)
+
+            try {
+                val questionsResult = if (category != null) {
+                    interviewRepository.getQuestionsByCategory(category)
+                } else {
+                    interviewRepository.getAllQuestions()
+                }
+
+                if (questionsResult.isFailure) {
+                    _uiState.value = _uiState.value.copy(isLoading = false)
+                    onError("질문을 불러올 수 없습니다. 인터넷 연결을 확인해주세요.")
+                    return@launch
+                }
+
+                val allQuestions = questionsResult.getOrNull() ?: emptyList()
+                if (allQuestions.isEmpty()) {
+                    _uiState.value = _uiState.value.copy(isLoading = false)
+                    onError("${category ?: "전체"} 카테고리에 질문이 없습니다.")
+                    return@launch
+                }
+
+                val selectedQuestions = allQuestions.shuffled().take(questionCount)
+                _uiState.value = _uiState.value.copy(
+                    selectedInterviewQuestions = selectedQuestions,
+                    isLoading = false
+                )
+                onSuccess()
+            } catch (e: Exception) {
+                _uiState.value = _uiState.value.copy(isLoading = false)
+                onError(e.message ?: "면접 시작 중 오류가 발생했습니다")
+            }
         }
     }
     
@@ -545,15 +703,27 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
 
             excelRepository.uploadExcelToQuestions(uri)
                 .onSuccess { result ->
-                    _uiState.value = _uiState.value.copy(
-                        uploadResult = result,
-                        isLoading = false
-                    )
-                    // Reload questions
-                    _uiState.value.currentUser?.let { user ->
-                        loadUserData(user.id)
-                    }
-                    onSuccess(result)
+                    println("✅ [AppViewModel] Excel upload successful: ${result.successCount} added, ${result.failureCount} failed")
+
+                    // Reload ALL questions from database
+                    interviewRepository.getAllQuestions()
+                        .onSuccess { questions ->
+                            println("✅ [AppViewModel] Reloaded ${questions.size} questions from database")
+                            _uiState.value = _uiState.value.copy(
+                                uploadResult = result,
+                                questions = questions,
+                                isLoading = false
+                            )
+                            onSuccess(result)
+                        }
+                        .onFailure { e ->
+                            println("❌ [AppViewModel] Failed to reload questions: ${e.message}")
+                            _uiState.value = _uiState.value.copy(
+                                uploadResult = result,
+                                isLoading = false
+                            )
+                            onSuccess(result)
+                        }
                 }
                 .onFailure { exception ->
                     _uiState.value = _uiState.value.copy(

@@ -144,7 +144,8 @@ fun StudyWithApp(appViewModel: AppViewModel) {
 
         Screen.Login.route -> {
             LoginScreen(
-                onLoginClick = { currentScreen = Screen.Home.route },
+                appViewModel = appViewModel,
+                onLoginSuccess = { currentScreen = Screen.Home.route },
                 onSignUpClick = { currentScreen = Screen.SignUp1.route },
                 onForgotPasswordClick = { currentScreen = Screen.ForgotPassword.route },
                 onBackClick = { currentScreen = Screen.Onboarding.route }
@@ -166,16 +167,57 @@ fun StudyWithApp(appViewModel: AppViewModel) {
                 currentScreen = currentScreen,
                 onNavigate = { screen -> currentScreen = screen },
                 userName = uiState.currentUser?.name ?: "사용자",
-                userEmail = uiState.currentUser?.email ?: "user@example.com"
+                userEmail = uiState.currentUser?.email ?: "user@example.com",
+                userGrade = uiState.currentUser?.grade ?: "USER",
+                userCategory = uiState.currentUser?.category ?: "",
+                isLoading = uiState.isLoading,
+                onStartInterview = {
+                    appViewModel.startRandomInterview(
+                        questionCount = 5,
+                        onSuccess = { currentScreen = Screen.InterviewPractice.route },
+                        onError = { error -> println("❌ Error starting interview: $error") }
+                    )
+                },
+                onLogout = {
+                    appViewModel.signOut {
+                        currentScreen = Screen.Onboarding.route
+                    }
+                }
             )
         }
         
         Screen.Repository.route -> {
-            MainAppContent(
-                currentScreen = currentScreen,
+            // Load questions and categories when entering Repository screen if not already loaded
+            LaunchedEffect(Unit) {
+                if (uiState.questions.isEmpty()) {
+                    println("📥 [MainActivity] Loading questions for Repository screen")
+                    appViewModel.loadAllQuestions()
+                }
+                if (uiState.categories.isEmpty()) {
+                    println("📥 [MainActivity] Loading categories for Repository screen")
+                    appViewModel.loadAllCategories()
+                }
+            }
+
+            RepositoryScreen(
+                currentRoute = currentScreen,
                 onNavigate = { screen -> currentScreen = screen },
-                userName = uiState.currentUser?.name ?: "사용자",
-                userEmail = uiState.currentUser?.email ?: "user@example.com"
+                questions = uiState.questions,
+                categories = uiState.categories,
+                isLoading = uiState.isLoading,
+                onUploadExcel = { uri ->
+                    appViewModel.uploadExcelQuestions(
+                        uri = uri,
+                        onSuccess = { result ->
+                            println("✅ Excel uploaded: ${result.successCount} questions added, ${result.failureCount} failed")
+                            // Reload categories after successful upload
+                            appViewModel.loadAllCategories()
+                        },
+                        onError = { error ->
+                            println("❌ Upload error: $error")
+                        }
+                    )
+                }
             )
         }
         
@@ -184,22 +226,63 @@ fun StudyWithApp(appViewModel: AppViewModel) {
                 currentScreen = currentScreen,
                 onNavigate = { screen -> currentScreen = screen },
                 userName = uiState.currentUser?.name ?: "사용자",
-                userEmail = uiState.currentUser?.email ?: "user@example.com"
+                userEmail = uiState.currentUser?.email ?: "user@example.com",
+                userGrade = uiState.currentUser?.grade ?: "USER",
+                userCategory = uiState.currentUser?.category ?: "",
+                isLoading = uiState.isLoading,
+                onStartInterview = {
+                    currentScreen = Screen.InterviewSetup.route
+                },
+                onLogout = {
+                    appViewModel.signOut {
+                        currentScreen = Screen.Onboarding.route
+                    }
+                }
+            )
+        }
+
+        Screen.InterviewSetup.route -> {
+            // Load categories when entering setup screen
+            LaunchedEffect(Unit) {
+                if (uiState.categories.isEmpty()) {
+                    println("📥 [MainActivity] Loading categories for InterviewSetup screen")
+                    appViewModel.loadAllCategories()
+                }
+            }
+
+            InterviewSetupScreen(
+                categories = uiState.categories,
+                onStartInterview = { questionCount, category ->
+                    appViewModel.startInterviewWithSettings(
+                        questionCount = questionCount,
+                        category = category,
+                        onSuccess = { currentScreen = Screen.InterviewPractice.route },
+                        onError = { error -> println("❌ Error starting interview: $error") }
+                    )
+                },
+                onBackClick = { currentScreen = Screen.Interview.route }
             )
         }
         
         Screen.Profile.route -> {
-            MainAppContent(
-                currentScreen = currentScreen,
+            ProfileScreen(
+                currentRoute = currentScreen,
                 onNavigate = { screen -> currentScreen = screen },
                 userName = uiState.currentUser?.name ?: "사용자",
-                userEmail = uiState.currentUser?.email ?: "user@example.com"
+                userEmail = uiState.currentUser?.email ?: "user@example.com",
+                userGrade = uiState.currentUser?.grade ?: "USER",
+                userCategory = uiState.currentUser?.category ?: "",
+                onLogout = {
+                    appViewModel.signOut {
+                        currentScreen = Screen.Onboarding.route
+                    }
+                }
             )
         }
         
         Screen.InterviewPractice.route -> {
             InterviewPracticeScreen(
-                questions = uiState.questions,
+                questions = uiState.selectedInterviewQuestions.ifEmpty { uiState.questions },
                 onBackClick = { currentScreen = Screen.Home.route },
                 onCompleteInterview = { answers ->
                     appViewModel.completeInterview(
@@ -234,7 +317,12 @@ fun MainAppContent(
     currentScreen: String,
     onNavigate: (String) -> Unit,
     userName: String,
-    userEmail: String
+    userEmail: String,
+    userGrade: String,
+    userCategory: String = "",
+    isLoading: Boolean,
+    onStartInterview: () -> Unit,
+    onLogout: () -> Unit
 ) {
     when (currentScreen) {
         Screen.Home.route -> {
@@ -245,16 +333,12 @@ fun MainAppContent(
                 onProfileClick = { onNavigate(Screen.Profile.route) }
             )
         }
-        Screen.Repository.route -> {
-            RepositoryScreen(
-                currentRoute = currentScreen,
-                onNavigate = onNavigate
-            )
-        }
         Screen.Interview.route -> {
             InterviewScreen(
                 currentRoute = currentScreen,
-                onNavigate = onNavigate
+                onNavigate = onNavigate,
+                isLoading = isLoading,
+                onStartInterviewSetup = onStartInterview
             )
         }
         Screen.Profile.route -> {
@@ -263,7 +347,9 @@ fun MainAppContent(
                 onNavigate = onNavigate,
                 userName = userName,
                 userEmail = userEmail,
-                onLogout = { onNavigate(Screen.Onboarding.route) }
+                userGrade = userGrade,
+                userCategory = userCategory,
+                onLogout = onLogout
             )
         }
     }

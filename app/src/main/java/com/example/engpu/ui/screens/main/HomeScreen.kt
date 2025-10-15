@@ -84,12 +84,12 @@ fun HomeScreen(
                 
                 Spacer(modifier = Modifier.height(17.dp)) // 카드 간격
                 
-                // 2. 모의면접 (보라색) 
+                // 2. 모의면접 시작하기 (보라색)
                 ActionCard(
-                    title = "모의면접",
-                    description = "모의면접을 하며\n실력을 키워봐요!",
+                    title = "모의면접 시작하기",
+                    description = "랜덤 질문으로 모의면접을\n시작해보세요!",
                     backgroundColor = StudyWithPurple, // #D9C7E7
-                    onClick = { onNavigate(Screen.InterviewPractice.route) },
+                    onClick = { onNavigate(Screen.Interview.route) },
                     showMusicIcon = true
                 )
                 
