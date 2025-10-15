@@ -406,3 +406,81 @@ fun QuestionDetailModalDB(
         }
     }
 }
+
+@Composable
+fun AddQuestionDialog(
+    onDismiss: () -> Unit,
+    onAdd: (String, String?, String?, Int?) -> Unit
+) {
+    var questionText by remember { mutableStateOf("") }
+    var category by remember { mutableStateOf("") }
+    var company by remember { mutableStateOf("") }
+    var year by remember { mutableStateOf("") }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("질문 추가") },
+        text = {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 8.dp)
+            ) {
+                OutlinedTextField(
+                    value = questionText,
+                    onValueChange = { questionText = it },
+                    label = { Text("질문 *") },
+                    modifier = Modifier.fillMaxWidth(),
+                    minLines = 2,
+                    maxLines = 4
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                OutlinedTextField(
+                    value = category,
+                    onValueChange = { category = it },
+                    label = { Text("카테고리") },
+                    modifier = Modifier.fillMaxWidth(),
+                    placeholder = { Text("예: 기술면접, 인성면접") }
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                OutlinedTextField(
+                    value = company,
+                    onValueChange = { company = it },
+                    label = { Text("회사") },
+                    modifier = Modifier.fillMaxWidth(),
+                    placeholder = { Text("예: 네이버, 카카오") }
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                OutlinedTextField(
+                    value = year,
+                    onValueChange = { year = it },
+                    label = { Text("출제연도") },
+                    modifier = Modifier.fillMaxWidth(),
+                    placeholder = { Text("예: 2024") }
+                )
+            }
+        },
+        confirmButton = {
+            TextButton(
+                onClick = {
+                    if (questionText.isNotBlank()) {
+                        onAdd(
+                            questionText.trim(),
+                            category.ifBlank { null },
+                            company.ifBlank { null },
+                            year.toIntOrNull()
+                        )
+                    }
+                },
+                enabled = questionText.isNotBlank()
+            ) {
+                Text("추가")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("취소")
+            }
+        }
+    )
+}

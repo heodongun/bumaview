@@ -33,15 +33,21 @@ fun RepositoryScreen(
     questions: List<com.example.engpu.data.supabase.Question> = emptyList(),
     categories: List<String> = emptyList(),
     isLoading: Boolean = false,
+    currentUser: com.example.engpu.data.supabase.User? = null,
     onUploadExcel: (android.net.Uri) -> Unit = {},
     onEditQuestion: ((com.example.engpu.data.supabase.Question) -> Unit)? = null,
-    onDeleteQuestion: ((String) -> Unit)? = null
+    onDeleteQuestion: ((String) -> Unit)? = null,
+    onAddQuestion: ((String, String?, String?, Int?) -> Unit)? = null
 ) {
     var searchTitle by remember { mutableStateOf("") }
     var searchCategory by remember { mutableStateOf("") }
     var selectedQuestion by remember { mutableStateOf<com.example.engpu.data.supabase.Question?>(null) }
     var isExpanded by remember { mutableStateOf(false) }
     var showUploadDialog by remember { mutableStateOf(false) }
+    var showAddQuestionDialog by remember { mutableStateOf(false) }
+
+    // Check if current user is admin
+    val isAdmin = currentUser?.isAdmin() == true
     
     // 필터링된 질문 목록
     val filteredQuestions = questions.filter {
@@ -64,7 +70,9 @@ fun RepositoryScreen(
                 categories = categories,
                 isExpanded = isExpanded,
                 onExpandToggle = { isExpanded = !isExpanded },
-                onUploadClick = { showUploadDialog = true }
+                onUploadClick = { showUploadDialog = true },
+                onAddQuestionClick = { showAddQuestionDialog = true },
+                isAdmin = isAdmin
             )
             
             // Questions List - 피그마 리스트 디자인 매칭
@@ -130,8 +138,8 @@ fun RepositoryScreen(
                 )
         )
         
-        // Excel Upload Dialog
-        if (showUploadDialog) {
+        // Excel Upload Dialog (Admin only)
+        if (showUploadDialog && isAdmin) {
             ExcelUploadDialog(
                 onDismiss = { showUploadDialog = false },
                 onFileSelected = { uri ->
@@ -141,13 +149,24 @@ fun RepositoryScreen(
             )
         }
 
+        // Add Question Dialog (Admin only)
+        if (showAddQuestionDialog && isAdmin) {
+            AddQuestionDialog(
+                onDismiss = { showAddQuestionDialog = false },
+                onAdd = { question, category, company, year ->
+                    onAddQuestion?.invoke(question, category, company, year)
+                    showAddQuestionDialog = false
+                }
+            )
+        }
+
         // Question Detail Modal
         selectedQuestion?.let { question ->
             QuestionDetailModalDB(
                 question = question,
                 onDismiss = { selectedQuestion = null },
-                onEdit = onEditQuestion,
-                onDelete = onDeleteQuestion
+                onEdit = if (isAdmin) onEditQuestion else null,
+                onDelete = if (isAdmin) onDeleteQuestion else null
             )
         }
     }
@@ -162,7 +181,9 @@ private fun RepositoryHeader(
     categories: List<String>,
     isExpanded: Boolean,
     onExpandToggle: () -> Unit,
-    onUploadClick: () -> Unit
+    onUploadClick: () -> Unit,
+    onAddQuestionClick: () -> Unit = {},
+    isAdmin: Boolean = false
 ) {
     Card(
         modifier = Modifier
@@ -180,7 +201,7 @@ private fun RepositoryHeader(
             // Status Bar
             StatusBar()
             
-            // Back Button and Upload Button Row
+            // Back Button and Admin Action Buttons Row
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -197,16 +218,40 @@ private fun RepositoryHeader(
                     )
                 }
 
-                // Upload Button
-                IconButton(
-                    onClick = onUploadClick,
-                    modifier = Modifier.size(42.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Upload,
-                        contentDescription = "Excel 업로드",
-                        tint = StudyWithYellow
-                    )
+                // Admin-only buttons
+                if (isAdmin) {
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        // Add Question Button
+                        Button(
+                            onClick = onAddQuestionClick,
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = StudyWithYellow
+                            ),
+                            shape = RoundedCornerShape(8.dp),
+                            modifier = Modifier.height(36.dp)
+                        ) {
+                            Text(
+                                text = "질문 추가",
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                color = StudyWithBlack
+                            )
+                        }
+
+                        // Upload Excel Button
+                        IconButton(
+                            onClick = onUploadClick,
+                            modifier = Modifier.size(42.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Upload,
+                                contentDescription = "Excel 업로드",
+                                tint = StudyWithYellow
+                            )
+                        }
+                    }
                 }
             }
             

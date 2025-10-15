@@ -217,6 +217,7 @@ fun StudyWithApp(appViewModel: AppViewModel) {
                 questions = uiState.questions,
                 categories = uiState.categories,
                 isLoading = uiState.isLoading,
+                currentUser = uiState.currentUser,
                 onUploadExcel = { uri ->
                     appViewModel.uploadExcelQuestions(
                         uri = uri,
@@ -249,6 +250,19 @@ fun StudyWithApp(appViewModel: AppViewModel) {
                         },
                         onError = { error ->
                             println("❌ Delete error: $error")
+                        }
+                    )
+                },
+                onAddQuestion = { question, category, company, year ->
+                    appViewModel.addQuestion(
+                        question = question,
+                        category = category,
+                        company = company,
+                        questionAt = year,
+                        onSuccess = {
+                            println("✅ Question added successfully")
+                            appViewModel.loadAllQuestions()
+                            appViewModel.loadAllCategories()
                         }
                     )
                 }

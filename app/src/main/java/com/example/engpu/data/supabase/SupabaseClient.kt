@@ -30,7 +30,12 @@ data class User(
     val updated_at: String? = null,
     val created_at: String? = null,
     val alarm_at: String? = null
-)
+) {
+    /**
+     * Check if user has admin privileges
+     */
+    fun isAdmin(): Boolean = grade.uppercase() == "ADMIN"
+}
 
 @Serializable
 data class Question(

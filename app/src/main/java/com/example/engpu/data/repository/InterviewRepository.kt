@@ -293,6 +293,13 @@ class InterviewRepository {
     // 질문 수정
     suspend fun updateQuestion(question: Question): Result<Unit> = withContext(Dispatchers.IO) {
         try {
+            println("📝 [InterviewRepository] Updating question:")
+            println("   - id: ${question.id}")
+            println("   - question: ${question.question}")
+            println("   - category: ${question.category}")
+            println("   - company: ${question.company}")
+            println("   - question_at: ${question.question_at}")
+
             supabase.from("Question")
                 .update(
                     mapOf(
@@ -306,8 +313,12 @@ class InterviewRepository {
                         eq("id", question.id)
                     }
                 }
+
+            println("✅ [InterviewRepository] Question updated successfully!")
             Result.success(Unit)
         } catch (e: Exception) {
+            println("❌ [InterviewRepository] Failed to update question: ${e.message}")
+            e.printStackTrace()
             Result.failure(e)
         }
     }
