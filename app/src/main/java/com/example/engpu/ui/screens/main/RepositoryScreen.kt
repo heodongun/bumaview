@@ -33,7 +33,9 @@ fun RepositoryScreen(
     questions: List<com.example.engpu.data.supabase.Question> = emptyList(),
     categories: List<String> = emptyList(),
     isLoading: Boolean = false,
-    onUploadExcel: (android.net.Uri) -> Unit = {}
+    onUploadExcel: (android.net.Uri) -> Unit = {},
+    onEditQuestion: ((com.example.engpu.data.supabase.Question) -> Unit)? = null,
+    onDeleteQuestion: ((String) -> Unit)? = null
 ) {
     var searchTitle by remember { mutableStateOf("") }
     var searchCategory by remember { mutableStateOf("") }
@@ -143,7 +145,9 @@ fun RepositoryScreen(
         selectedQuestion?.let { question ->
             QuestionDetailModalDB(
                 question = question,
-                onDismiss = { selectedQuestion = null }
+                onDismiss = { selectedQuestion = null },
+                onEdit = onEditQuestion,
+                onDelete = onDeleteQuestion
             )
         }
     }

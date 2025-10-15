@@ -77,7 +77,8 @@ fun StudyWithApp(appViewModel: AppViewModel) {
             SignUpScreen2(
                 onNextClick = { jobPosition ->
                     appViewModel.updateSignUpData { it.copy(jobPosition = jobPosition) }
-                    currentScreen = Screen.SignUp3.route
+                    // Skip email verification screens (SignUp3, SignUp4) in dev mode
+                    currentScreen = Screen.SignUp5.route
                 },
                 onBackClick = { currentScreen = Screen.SignUp1.route }
             )
@@ -115,30 +116,41 @@ fun StudyWithApp(appViewModel: AppViewModel) {
         
         Screen.SignUp5.route -> {
             SignUpScreen5(
-                onNextClick = { interviewTime ->
-                    appViewModel.updateSignUpData { it.copy(interviewTime = interviewTime) }
+                onNextClick = { email, interviewTime ->
+                    appViewModel.updateSignUpData { it.copy(email = email, interviewTime = interviewTime) }
                     currentScreen = Screen.SignUp6.route
                 },
-                onBackClick = { currentScreen = Screen.SignUp4.route }
+                onBackClick = { currentScreen = Screen.SignUp2.route }
             )
         }
         
         Screen.SignUp6.route -> {
+            var signUpError by remember { mutableStateOf<String?>(null) }
+
             SignUpScreen6(
                 onCompleteClick = { password, confirmPassword ->
-                    appViewModel.updateSignUpData { 
+                    println("🔘 [MainActivity] SignUp6 complete button clicked")
+                    signUpError = null
+                    appViewModel.updateSignUpData {
                         it.copy(
                             password = password,
                             confirmPassword = confirmPassword
                         )
                     }
                     appViewModel.completeSignUp(
-                        onSuccess = { currentScreen = Screen.Login.route },
-                        onError = { /* Error handled by ViewModel */ }
+                        onSuccess = {
+                            println("✅ [MainActivity] Signup success, navigating to login")
+                            currentScreen = Screen.Login.route
+                        },
+                        onError = { error ->
+                            println("❌ [MainActivity] Signup error: $error")
+                            signUpError = error
+                        }
                     )
                 },
                 onBackClick = { currentScreen = Screen.SignUp5.route },
-                userName = signUpData.name
+                userName = signUpData.name,
+                initialError = signUpError
             )
         }
 
@@ -215,6 +227,28 @@ fun StudyWithApp(appViewModel: AppViewModel) {
                         },
                         onError = { error ->
                             println("❌ Upload error: $error")
+                        }
+                    )
+                },
+                onEditQuestion = { question ->
+                    appViewModel.updateQuestion(
+                        question = question,
+                        onSuccess = {
+                            println("✅ Question updated successfully")
+                        },
+                        onError = { error ->
+                            println("❌ Update error: $error")
+                        }
+                    )
+                },
+                onDeleteQuestion = { questionId ->
+                    appViewModel.deleteQuestion(
+                        questionId = questionId,
+                        onSuccess = {
+                            println("✅ Question deleted successfully")
+                        },
+                        onError = { error ->
+                            println("❌ Delete error: $error")
                         }
                     )
                 }
@@ -299,7 +333,8 @@ fun StudyWithApp(appViewModel: AppViewModel) {
                 onSaveAnswer = { questionId, answer ->
                     // Individual answer saving (kept for backward compatibility)
                     // Main saving happens in completeInterview
-                }
+                },
+                isProcessing = uiState.isLoading
             )
         }
 
@@ -307,6 +342,20 @@ fun StudyWithApp(appViewModel: AppViewModel) {
             InterviewResultScreen(
                 results = uiState.interviewResults,
                 onGoHome = { currentScreen = Screen.Home.route }
+            )
+        }
+
+        Screen.InterviewHistory.route -> {
+            // Load interview history when entering screen
+            LaunchedEffect(Unit) {
+                println("📥 [MainActivity] Loading interview history")
+                appViewModel.loadInterviewHistory()
+            }
+
+            InterviewHistoryScreen(
+                historyItems = uiState.interviewHistory,
+                isLoading = uiState.isLoading,
+                onBackClick = { currentScreen = Screen.Home.route }
             )
         }
     }

@@ -28,17 +28,24 @@ import androidx.compose.foundation.text.KeyboardOptions
 fun SignUpScreen6(
     onCompleteClick: (password: String, confirmPassword: String) -> Unit,
     onBackClick: () -> Unit,
-    userName: String
+    userName: String,
+    initialError: String? = null
 ) {
     var password by remember { mutableStateOf("") }
     var confirmPassword by remember { mutableStateOf("") }
     var isVisible by remember { mutableStateOf(false) }
     var showCompletionAnimation by remember { mutableStateOf(false) }
-    
+    var errorMessage by remember { mutableStateOf<String?>(null) }
+
+    // Update error message when initialError changes
+    LaunchedEffect(initialError) {
+        errorMessage = initialError
+    }
+
     val isPasswordValid = password.length >= 8
     val isPasswordMatching = password == confirmPassword && confirmPassword.isNotEmpty()
     val canProceed = isPasswordValid && isPasswordMatching
-    
+
     LaunchedEffect(Unit) {
         isVisible = true
     }
@@ -170,7 +177,7 @@ fun SignUpScreen6(
                 }
                 
                 Spacer(modifier = Modifier.height(15.dp))
-                
+
                 // Password match indicator
                 AnimatedVisibility(
                     visible = confirmPassword.isNotEmpty(),
@@ -184,7 +191,28 @@ fun SignUpScreen6(
                         color = if (isPasswordMatching) Color(0xFF4CAF50) else Color(0xFFE57373)
                     )
                 }
-                
+
+                Spacer(modifier = Modifier.height(20.dp))
+
+                // Error message display
+                errorMessage?.let { error ->
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = CardDefaults.cardColors(
+                            containerColor = Color(0xFFFFEBEE)
+                        ),
+                        shape = androidx.compose.foundation.shape.RoundedCornerShape(8.dp)
+                    ) {
+                        Text(
+                            text = error,
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.Normal,
+                            color = Color(0xFFD32F2F),
+                            modifier = Modifier.padding(12.dp)
+                        )
+                    }
+                }
+
                 Spacer(modifier = Modifier.weight(1f))
                 
                 // Complete Button
@@ -199,6 +227,8 @@ fun SignUpScreen6(
                         StudyWithButton(
                             text = "회원가입 완료",
                             onClick = {
+                                println("🔘 [SignUpScreen6] Complete button clicked")
+                                errorMessage = null
                                 onCompleteClick(password, confirmPassword)
                             },
                             modifier = Modifier

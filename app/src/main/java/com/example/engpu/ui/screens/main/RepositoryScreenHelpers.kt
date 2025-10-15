@@ -131,8 +131,16 @@ fun QuestionItemDB(
 @Composable
 fun QuestionDetailModalDB(
     question: Question,
-    onDismiss: () -> Unit
+    onDismiss: () -> Unit,
+    onEdit: ((Question) -> Unit)? = null,
+    onDelete: ((String) -> Unit)? = null
 ) {
+    var showEditDialog by remember { mutableStateOf(false) }
+    var showDeleteDialog by remember { mutableStateOf(false) }
+    var editedQuestion by remember { mutableStateOf(question.question) }
+    var editedCategory by remember { mutableStateOf(question.category ?: "") }
+    var editedCompany by remember { mutableStateOf(question.company ?: "") }
+    var editedYear by remember { mutableStateOf(question.question_at?.toString() ?: "") }
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -261,7 +269,140 @@ fun QuestionDetailModalDB(
                         )
                     }
                 }
+
+                Spacer(modifier = Modifier.height(24.dp))
+
+                // Action Buttons
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    // Delete Button
+                    onDelete?.let {
+                        Button(
+                            onClick = { showDeleteDialog = true },
+                            modifier = Modifier.weight(1f),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = Color(0xFFF44336)
+                            ),
+                            shape = RoundedCornerShape(8.dp)
+                        ) {
+                            Text(
+                                text = "삭제",
+                                fontSize = 14.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                color = Color.White
+                            )
+                        }
+                    }
+
+                    // Edit Button
+                    onEdit?.let {
+                        Button(
+                            onClick = { showEditDialog = true },
+                            modifier = Modifier.weight(1f),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = StudyWithYellow
+                            ),
+                            shape = RoundedCornerShape(8.dp)
+                        ) {
+                            Text(
+                                text = "수정",
+                                fontSize = 14.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                color = StudyWithBlack
+                            )
+                        }
+                    }
+                }
             }
+        }
+
+        // Edit Dialog
+        if (showEditDialog) {
+            AlertDialog(
+                onDismissRequest = { showEditDialog = false },
+                title = { Text("질문 수정") },
+                text = {
+                    Column {
+                        OutlinedTextField(
+                            value = editedQuestion,
+                            onValueChange = { editedQuestion = it },
+                            label = { Text("질문") },
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        OutlinedTextField(
+                            value = editedCategory,
+                            onValueChange = { editedCategory = it },
+                            label = { Text("카테고리") },
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        OutlinedTextField(
+                            value = editedCompany,
+                            onValueChange = { editedCompany = it },
+                            label = { Text("회사") },
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        OutlinedTextField(
+                            value = editedYear,
+                            onValueChange = { editedYear = it },
+                            label = { Text("출제연도") },
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    }
+                },
+                confirmButton = {
+                    TextButton(
+                        onClick = {
+                            onEdit?.invoke(
+                                question.copy(
+                                    question = editedQuestion,
+                                    category = editedCategory.ifBlank { null },
+                                    company = editedCompany.ifBlank { null },
+                                    question_at = editedYear.toIntOrNull()
+                                )
+                            )
+                            showEditDialog = false
+                            onDismiss()
+                        }
+                    ) {
+                        Text("저장")
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { showEditDialog = false }) {
+                        Text("취소")
+                    }
+                }
+            )
+        }
+
+        // Delete Confirmation Dialog
+        if (showDeleteDialog) {
+            AlertDialog(
+                onDismissRequest = { showDeleteDialog = false },
+                title = { Text("질문 삭제") },
+                text = { Text("이 질문을 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.") },
+                confirmButton = {
+                    TextButton(
+                        onClick = {
+                            onDelete?.invoke(question.id)
+                            showDeleteDialog = false
+                            onDismiss()
+                        }
+                    ) {
+                        Text("삭제", color = Color(0xFFF44336))
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { showDeleteDialog = false }) {
+                        Text("취소")
+                    }
+                }
+            )
         }
     }
 }

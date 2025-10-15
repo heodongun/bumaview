@@ -26,13 +26,16 @@ import com.example.engpu.ui.theme.*
 
 @Composable
 fun SignUpScreen5(
-    onNextClick: (String) -> Unit, // "14:30" 형식으로 시간 전달
+    onNextClick: (String, String) -> Unit, // email, time 전달
     onBackClick: () -> Unit
 ) {
+    var email by remember { mutableStateOf("") }
     var selectedHour: Int by remember { mutableStateOf(9) } // 기본값 오전 9시
     var selectedMinute: Int by remember { mutableStateOf(0) } // 기본값 00분
     var isVisible: Boolean by remember { mutableStateOf(false) }
     var showTimePicker: Boolean by remember { mutableStateOf(false) }
+
+    val isValidEmail = email.contains("@") && email.contains(".")
     
     LaunchedEffect(Unit) {
         isVisible = true
@@ -77,15 +80,15 @@ fun SignUpScreen5(
                 ) + fadeIn(animationSpec = tween(700, delayMillis = 200))
             ) {
                 Text(
-                    text = "면접 알림 시간 설정",
+                    text = "이메일과 알림 시간 설정",
                     fontSize = 24.sp,
                     fontWeight = FontWeight.SemiBold,
                     color = StudyWithBlack
                 )
             }
-            
+
             Spacer(modifier = Modifier.height(15.dp))
-            
+
             // Subtitle
             AnimatedVisibility(
                 visible = isVisible,
@@ -95,15 +98,42 @@ fun SignUpScreen5(
                 ) + fadeIn(animationSpec = tween(700, delayMillis = 300))
             ) {
                 Text(
-                    text = "매일 면접 질문을 받고 싶은 시간을 선택해주세요.\n이메일로 오늘의 면접 질문을 보내드립니다.",
+                    text = "이메일 주소와 매일 면접 질문을 받고 싶은 시간을 선택해주세요.",
                     fontSize = 14.sp,
                     fontWeight = FontWeight.SemiBold,
                     color = StudyWithBlack,
                     lineHeight = 20.sp
                 )
             }
-            
-            Spacer(modifier = Modifier.height(50.dp))
+
+            Spacer(modifier = Modifier.height(30.dp))
+
+            // Email Input
+            AnimatedVisibility(
+                visible = isVisible,
+                enter = slideInHorizontally(
+                    initialOffsetX = { -it },
+                    animationSpec = tween(800, delayMillis = 400)
+                ) + fadeIn(animationSpec = tween(800, delayMillis = 400))
+            ) {
+                Column {
+                    Text(
+                        text = "이메일",
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Normal,
+                        color = StudyWithBlack.copy(alpha = 0.7f)
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    com.example.engpu.ui.components.StudyWithTextField(
+                        value = email,
+                        onValueChange = { email = it },
+                        placeholder = "example@email.com",
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(30.dp))
             
             // Time Display
             AnimatedVisibility(
@@ -219,18 +249,28 @@ fun SignUpScreen5(
                     animationSpec = tween(700, delayMillis = 600)
                 ) + fadeIn(animationSpec = tween(700, delayMillis = 600))
             ) {
-                StudyWithButton(
-                    text = "다음",
-                    onClick = { 
-                        val timeString: String = String.format("%02d:%02d", selectedHour, selectedMinute)
-                        onNextClick(timeString)
-                    },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(55.dp),
-                    backgroundColor = StudyWithBlack,
-                    textColor = StudyWithYellow
-                )
+                if (isValidEmail) {
+                    StudyWithButton(
+                        text = "다음",
+                        onClick = {
+                            val timeString: String = String.format("%02d:%02d", selectedHour, selectedMinute)
+                            onNextClick(email, timeString)
+                        },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(55.dp),
+                        backgroundColor = StudyWithBlack,
+                        textColor = StudyWithYellow
+                    )
+                } else {
+                    StudyWithInactiveButton(
+                        text = "이메일을 입력해주세요",
+                        onClick = { },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(55.dp)
+                    )
+                }
             }
             
             Spacer(modifier = Modifier.height(60.dp))

@@ -100,9 +100,7 @@ fun HomeScreen(
                     title = "모의면접 저장소",
                     description = "면접에 대한 피드백을\n들으며 복기를 해보아요!",
                     backgroundColor = StudyWithLightBlue, // #85C7EE
-                    onClick = { 
-                        // 추후 구현할 저장소 화면
-                    },
+                    onClick = { onNavigate(Screen.InterviewHistory.route) },
                     showGroup28Icon = true
                 )
                 

@@ -1,6 +1,8 @@
 package com.example.engpu.data.repository
 
 import com.example.engpu.data.supabase.*
+import com.example.engpu.ui.screens.interview.InterviewHistoryItem
+import com.example.engpu.ui.screens.interview.InterviewDetailItem
 import io.github.jan.supabase.postgrest.from
 import io.github.jan.supabase.postgrest.query.Columns
 import kotlinx.coroutines.Dispatchers
@@ -108,8 +110,15 @@ class InterviewRepository {
         groupId: Int? = null
     ): Result<Interview> = withContext(Dispatchers.IO) {
         try {
+            println("💾 [InterviewRepository] Saving interview:")
+            println("   - userId: $userId")
+            println("   - questionId: $questionId")
+            println("   - answer length: ${answer.length}")
+            println("   - score: $score")
+            println("   - groupId: $groupId")
+
             val interview = Interview(
-                created_at = System.currentTimeMillis().toString(),
+                created_at = null,  // Let database auto-generate timestamp
                 user_id = userId,
                 question_id = questionId,
                 answer = answer,
@@ -117,12 +126,89 @@ class InterviewRepository {
                 feedback = feedback,
                 group_id = groupId
             )
-            
+
             val result = supabase.from("Interview")
-                .insert(interview)
+                .insert(interview) {
+                    select()
+                }
                 .decodeSingle<Interview>()
-            
+
+            println("✅ [InterviewRepository] Interview saved successfully!")
+            println("   - created_at: ${result.created_at}")
+
             Result.success(result)
+        } catch (e: Exception) {
+            println("❌ [InterviewRepository] Failed to save interview: ${e.message}")
+            e.printStackTrace()
+            Result.failure(e)
+        }
+    }
+
+    // 사용자의 모든 인터뷰 기록 조회 (그룹별로)
+    suspend fun getUserInterviewHistory(userId: String): Result<List<InterviewHistoryItem>> = withContext(Dispatchers.IO) {
+        try {
+            // Get all interviews for the user
+            val interviews = supabase.from("Interview")
+                .select()
+                .decodeList<Interview>()
+                .filter { it.user_id == userId }
+                .sortedByDescending { it.created_at }
+
+            // Get all question details
+            val questionIds = interviews.map { it.question_id }.distinct()
+            val questions = questionIds.mapNotNull { questionId ->
+                getQuestionById(questionId).getOrNull()
+            }.associateBy { it.id }
+
+            // Group by group_id and created_at (filter out null created_at)
+            val validInterviews = interviews.filter { it.created_at != null }
+            val grouped = validInterviews.groupBy { it.group_id ?: it.created_at!!.hashCode() }
+
+            val historyItems = grouped.map { (groupId, groupInterviews) ->
+                val detailItems = groupInterviews.mapNotNull { interview ->
+                    val question = questions[interview.question_id]
+                    question?.let {
+                        InterviewDetailItem(
+                            questionId = interview.question_id,
+                            question = it.question,
+                            answer = interview.answer ?: "",
+                            score = interview.score,
+                            feedback = interview.feedback
+                        )
+                    }
+                }
+
+                val averageScore = groupInterviews.mapNotNull { it.score }.average().toInt()
+                val createdAt = groupInterviews.first().created_at!!  // Safe because filtered above
+
+                InterviewHistoryItem(
+                    groupId = groupId,
+                    createdAt = createdAt,
+                    questionCount = detailItems.size,
+                    averageScore = averageScore,
+                    interviews = detailItems
+                )
+            }.sortedByDescending { it.createdAt }
+
+            Result.success(historyItems)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    // 특정 질문 조회
+    private suspend fun getQuestionById(questionId: String): Result<Question> = withContext(Dispatchers.IO) {
+        try {
+            val question = supabase.from("Question")
+                .select()
+                .decodeList<Question>()
+                .firstOrNull { it.id == questionId }
+            
+            if (question != null) {
+                Result.success(question)
+            } else {
+                Result.failure(Exception("Question not found: $questionId"))
+            }
         } catch (e: Exception) {
             Result.failure(e)
         }
@@ -196,6 +282,28 @@ class InterviewRepository {
                 .delete {
                     filter {
                         eq("id", questionId)
+                    }
+                }
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    // 질문 수정
+    suspend fun updateQuestion(question: Question): Result<Unit> = withContext(Dispatchers.IO) {
+        try {
+            supabase.from("Question")
+                .update(
+                    mapOf(
+                        "question" to question.question,
+                        "category" to question.category,
+                        "company" to question.company,
+                        "question_at" to question.question_at
+                    )
+                ) {
+                    filter {
+                        eq("id", question.id)
                     }
                 }
             Result.success(Unit)

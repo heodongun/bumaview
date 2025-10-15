@@ -2,6 +2,7 @@ package com.example.engpu.ui.screens.interview
 
 import androidx.compose.animation.*
 import androidx.compose.animation.core.*
+import androidx.compose.animation.core.LinearEasing
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -35,7 +36,8 @@ fun InterviewPracticeScreen(
     questions: List<com.example.engpu.data.supabase.Question>,
     onBackClick: () -> Unit,
     onCompleteInterview: (List<InterviewAnswer>) -> Unit,
-    onSaveAnswer: (questionId: String, answer: String) -> Unit
+    onSaveAnswer: (questionId: String, answer: String) -> Unit,
+    isProcessing: Boolean = false
 ) {
     var currentQuestionIndex by remember { mutableStateOf(0) }
     var isRecording by remember { mutableStateOf(false) }
@@ -297,6 +299,74 @@ fun InterviewPracticeScreen(
             }
             
             Spacer(modifier = Modifier.height(40.dp))
+        }
+
+        // AI Analysis Loading Overlay
+        if (isProcessing) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color.Black.copy(alpha = 0.7f)),
+                contentAlignment = Alignment.Center
+            ) {
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth(0.8f)
+                        .padding(32.dp),
+                    shape = RoundedCornerShape(16.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = Color.White
+                    ),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(32.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center
+                    ) {
+                        // Animated loading indicator
+                        val infiniteTransition = rememberInfiniteTransition(label = "loading")
+                        val rotation by infiniteTransition.animateFloat(
+                            initialValue = 0f,
+                            targetValue = 360f,
+                            animationSpec = infiniteRepeatable(
+                                animation = tween(1500, easing = LinearEasing),
+                                repeatMode = RepeatMode.Restart
+                            ),
+                            label = "rotation"
+                        )
+
+                        CircularProgressIndicator(
+                            modifier = Modifier
+                                .size(60.dp)
+                                .graphicsLayer { rotationZ = rotation },
+                            color = StudyWithYellow,
+                            strokeWidth = 6.dp
+                        )
+
+                        Spacer(modifier = Modifier.height(24.dp))
+
+                        Text(
+                            text = "AI 분석 중...",
+                            fontSize = 20.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = StudyWithBlack
+                        )
+
+                        Spacer(modifier = Modifier.height(8.dp))
+
+                        Text(
+                            text = "전문 면접관이 답변을 평가하고 있습니다",
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.Normal,
+                            color = StudyWithGray,
+                            textAlign = TextAlign.Center
+                        )
+                    }
+                }
+            }
         }
     }
 }

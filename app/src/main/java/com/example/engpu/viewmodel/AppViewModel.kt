@@ -29,6 +29,7 @@ data class AppUiState(
     val categories: List<String> = emptyList(),
     val selectedInterviewQuestions: List<Question> = emptyList(),
     val interviews: List<Interview> = emptyList(),
+    val interviewHistory: List<com.example.engpu.ui.screens.interview.InterviewHistoryItem> = emptyList(),
     val interviewResults: List<InterviewResult> = emptyList(),
     val uploadResult: UploadResult? = null,
     val error: String? = null
@@ -110,22 +111,33 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
     // Enhanced signUp with alarm time
     fun completeSignUp(onSuccess: () -> Unit, onError: (String) -> Unit) {
         val data = _signUpData.value
-        
-        // Validation
-        if (!data.isEmailVerified) {
+
+        println("🚀 [AppViewModel] Starting signup completion")
+        println("   - Name: ${data.name}")
+        println("   - Email: ${data.email}")
+        println("   - Job: ${data.jobPosition}")
+        println("   - Time: ${data.interviewTime}")
+        println("   - Password length: ${data.password.length}")
+
+        // Validation (skip email verification in dev mode)
+        if (!isDev && !data.isEmailVerified) {
+            println("❌ [AppViewModel] Email not verified")
             onError("이메일 인증을 먼저 완료해주세요")
             return
         }
-        if (data.password.isEmpty() || data.password.length < 6) {
-            onError("비밀번호는 6자 이상이어야 합니다")
+        if (data.password.isEmpty() || data.password.length < 8) {
+            println("❌ [AppViewModel] Password too short: ${data.password.length}")
+            onError("비밀번호는 8자 이상이어야 합니다")
             return
         }
         if (data.password != data.confirmPassword) {
+            println("❌ [AppViewModel] Passwords don't match")
             onError("비밀번호가 일치하지 않습니다")
             return
         }
-        
+
         viewModelScope.launch {
+            println("📝 [AppViewModel] Calling authRepository.signUp...")
             _uiState.value = _uiState.value.copy(isLoading = true)
             authRepository.signUp(
                 email = data.email,
@@ -134,7 +146,14 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
                 category = data.jobPosition,
                 alarmTime = data.interviewTime
             )
-                .onSuccess {
+                .onSuccess { authUser ->
+                    println("✅ [AppViewModel] Signup successful!")
+
+                    // Dev mode: Set current user after signup
+                    if (isDev) {
+                        authRepository.setDevModeCurrentUser(data.email)
+                    }
+
                     _uiState.value = _uiState.value.copy(
                         isLoading = false,
                         error = null
@@ -143,6 +162,8 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
                     onSuccess()
                 }
                 .onFailure { exception ->
+                    println("❌ [AppViewModel] Signup failed: ${exception.message}")
+                    exception.printStackTrace()
                     _uiState.value = _uiState.value.copy(
                         isLoading = false,
                         error = exception.message
@@ -184,6 +205,11 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
             _uiState.value = _uiState.value.copy(isLoading = true)
             authRepository.signIn(email, password)
                 .onSuccess { authUser ->
+                    // Dev mode: Set current user after signin
+                    if (isDev) {
+                        authRepository.setDevModeCurrentUser(email)
+                    }
+
                     val user = authRepository.getCurrentUser()
                     println("✅ [AppViewModel] User signed in: ${user?.name} (${user?.email})")
                     _uiState.value = _uiState.value.copy(
@@ -394,6 +420,90 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     /**
+     * Load user's interview history
+     */
+    fun loadInterviewHistory() {
+        val userId = _uiState.value.currentUser?.id
+        if (userId == null) {
+            println("❌ [AppViewModel] Cannot load interview history: No user logged in")
+            return
+        }
+
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(isLoading = true)
+            interviewRepository.getUserInterviewHistory(userId)
+                .onSuccess { history ->
+                    println("✅ [AppViewModel] Loaded ${history.size} interview groups from database")
+                    _uiState.value = _uiState.value.copy(interviewHistory = history, isLoading = false)
+                }
+                .onFailure { exception ->
+                    println("❌ [AppViewModel] Failed to load interview history: ${exception.message}")
+                    _uiState.value = _uiState.value.copy(isLoading = false, error = exception.message)
+                }
+        }
+    }
+
+    /**
+     * Update existing question
+     */
+    fun updateQuestion(
+        question: Question,
+        onSuccess: () -> Unit,
+        onError: (String) -> Unit
+    ) {
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(isLoading = true)
+
+            interviewRepository.updateQuestion(question)
+                .onSuccess {
+                    println("✅ [AppViewModel] Question updated successfully: ${question.id}")
+                    // Reload questions to refresh UI
+                    loadAllQuestions()
+                    _uiState.value = _uiState.value.copy(isLoading = false)
+                    onSuccess()
+                }
+                .onFailure { exception ->
+                    println("❌ [AppViewModel] Failed to update question: ${exception.message}")
+                    _uiState.value = _uiState.value.copy(
+                        isLoading = false,
+                        error = exception.message
+                    )
+                    onError(exception.message ?: "질문 수정 실패")
+                }
+        }
+    }
+
+    /**
+     * Delete question from database
+     */
+    fun deleteQuestion(
+        questionId: String,
+        onSuccess: () -> Unit,
+        onError: (String) -> Unit
+    ) {
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(isLoading = true)
+
+            interviewRepository.deleteQuestion(questionId)
+                .onSuccess {
+                    println("✅ [AppViewModel] Question deleted successfully: $questionId")
+                    // Reload questions to refresh UI
+                    loadAllQuestions()
+                    _uiState.value = _uiState.value.copy(isLoading = false)
+                    onSuccess()
+                }
+                .onFailure { exception ->
+                    println("❌ [AppViewModel] Failed to delete question: ${exception.message}")
+                    _uiState.value = _uiState.value.copy(
+                        isLoading = false,
+                        error = exception.message
+                    )
+                    onError(exception.message ?: "질문 삭제 실패")
+                }
+        }
+    }
+
+    /**
      * Start interview with specific settings
      */
     fun startInterviewWithSettings(
@@ -542,14 +652,22 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
             _uiState.value = _uiState.value.copy(isLoading = true)
 
             try {
+                // Generate a unique group ID for this interview session
+                val sessionGroupId = groupId ?: System.currentTimeMillis().toInt()
+                println("📋 [AppViewModel] Starting interview completion with groupId: $sessionGroupId")
+                println("   - User ID: $userId")
+                println("   - Total answers: ${answers.size}")
+
                 // Process all answers with AI scoring in parallel
                 val results = answers.map { answer ->
                     async {
-                        processInterviewAnswer(userId, answer, groupId)
+                        processInterviewAnswer(userId, answer, sessionGroupId)
                     }
                 }.map { it.await() }
 
                 val successResults = results.filterNotNull()
+
+                println("✅ [AppViewModel] Processing complete: ${successResults.size}/${answers.size} successful")
 
                 if (successResults.size == answers.size) {
                     _uiState.value = _uiState.value.copy(
@@ -562,6 +680,8 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
                     onError("일부 답변 처리에 실패했습니다 (${successResults.size}/${answers.size})")
                 }
             } catch (e: Exception) {
+                println("❌ [AppViewModel] Interview completion failed: ${e.message}")
+                e.printStackTrace()
                 _uiState.value = _uiState.value.copy(
                     isLoading = false,
                     error = e.message
@@ -580,6 +700,8 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         groupId: Int?
     ): InterviewResult? {
         return try {
+            println("🔄 [AppViewModel] Processing answer for question: ${answer.questionId}")
+            
             // Get AI feedback
             val feedbackResult = geminiRepository.getFeedbackForInterview(
                 question = answer.question,
@@ -594,12 +716,16 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
 
             val geminiResponse = feedbackResult.getOrNull()
             val feedback = geminiResponse?.content ?: "피드백을 생성할 수 없습니다"
+            
+            println("✅ [AppViewModel] AI feedback received (${feedback.length} chars)")
 
             // Extract score from feedback (simple parsing)
             val score = extractScoreFromFeedback(feedback)
+            println("📊 [AppViewModel] Extracted score: $score")
 
             // Save to database
-            interviewRepository.saveInterview(
+            println("💾 [AppViewModel] Attempting to save to database...")
+            val saveResult = interviewRepository.saveInterview(
                 userId = userId,
                 questionId = answer.questionId,
                 answer = answer.answer,
@@ -607,6 +733,13 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
                 feedback = feedback,
                 groupId = groupId
             )
+
+            if (saveResult.isSuccess) {
+                println("✅ [AppViewModel] Successfully saved to database!")
+            } else {
+                println("❌ [AppViewModel] Failed to save to database: ${saveResult.exceptionOrNull()?.message}")
+                saveResult.exceptionOrNull()?.printStackTrace()
+            }
 
             InterviewResult(
                 questionId = answer.questionId,
@@ -617,6 +750,7 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
             )
         } catch (e: Exception) {
             println("❌ Error processing answer for ${answer.questionId}: ${e.message}")
+            e.printStackTrace()
             createFallbackResult(userId, answer, groupId)
         }
     }
